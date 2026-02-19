@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choisir mon point relais — Neoludis</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F2EC;
+    --surface: #FFFFFF;
+    --ink: #1A1A1A;
+    --ink-muted: #6B6B6B;
+    --accent: #E8431A;
+    --accent-light: #FFF0EC;
+    --border: #E0DDD6;
+    --success: #1A7A4A;
+    --success-light: #EDFAF3;
+    --radius: 12px;
+    --shadow: 0 2px 20px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--ink);
+    color: white;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+    color: white;
+  }
+  header .logo span { color: var(--accent); }
+  header p {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.55);
+    font-weight: 300;
+  }
+
+  /* ─── MAIN ─── */
+  main {
+    max-width: 680px;
+    margin: 48px auto;
+    padding: 0 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 36px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .subtitle {
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    margin-bottom: 28px;
+    font-weight: 300;
+  }
+
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-grid.full { grid-template-columns: 1fr; }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    background: var(--bg);
+    color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(232,67,26,0.1);
+    background: white;
+  }
+  input::placeholder { color: #BBBAB4; }
+
+  .field { display: flex; flex-direction: column; }
+
+  /* ─── WIDGET COLISSIMO ─── */
+  #colissimo-wrapper {
+    margin-top: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 400px;
+    background: var(--bg);
+  }
+
+  #widget-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    gap: 12px;
+    text-align: center;
+    padding: 24px;
+  }
+  #widget-placeholder svg {
+    opacity: 0.3;
+  }
+
+  /* ─── SELECTED RELAY ─── */
+  #selected-relay {
+    display: none;
+    background: var(--success-light);
+    border: 1.5px solid #A8E6C5;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 16px;
+  }
+  #selected-relay .relay-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--success);
+    margin-bottom: 4px;
+  }
+  #selected-relay .relay-address {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+  }
+  #selected-relay .relay-id {
+    font-size: 0.78rem;
+    color: var(--success);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* ─── BUTTON ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 14px rgba(232,67,26,0.25);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 20px rgba(232,67,26,0.35); }
+  .btn-primary:disabled {
+    background: #D0CEC9;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  .btn-secondary {
+    background: var(--ink);
+    color: white;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
+
+  /* ─── SUCCESS SCREEN ─── */
+  #success-screen {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+  }
+  #success-screen .big-check {
+    width: 72px;
+    height: 72px;
+    background: var(--success-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    border: 2px solid #A8E6C5;
+  }
+  #success-screen h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    color: var(--success);
+  }
+  #success-screen p {
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* ─── ERRORS ─── */
+  .error-msg {
+    color: var(--accent);
+    font-size: 0.82rem;
+    margin-top: 4px;
+    display: none;
+  }
+  input.error { border-color: var(--accent); }
+
+  /* ─── ADMIN PANEL ─── */
+  #admin-panel {
+    display: none;
+  }
+  .admin-header {
+    background: var(--ink);
+    color: white;
+    padding: 14px 20px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .admin-table-wrap {
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  thead { background: #F5F2EC; position: sticky; top: 0; }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+
+  .badge-count {
+    background: var(--accent);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 100px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+
+  /* ─── PROGRESS STEPS ─── */
+  .steps-indicator {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .step-dot {
+    height: 4px;
+    flex: 1;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .step-dot.active { background: var(--accent); }
+  .step-dot.done { background: var(--success); }
+
+  /* ─── CONFIG NOTICE ─── */
+  .config-notice {
+    background: #FFF8E1;
+    border: 1px solid #FFD54F;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: #7B5800;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  @media (max-width: 520px) {
+    .form-grid { grid-template-columns: 1fr; }
+    main { margin: 24px auto; }
+    .card { padding: 24px 20px; }
+    header { padding: 14px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Neo<span>ludis</span></div>
+    <p>Sélection de point relais</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══════════════════════════════ FORMULAIRE CLIENT ══════════════════════════════ -->
+  <div id="form-section">
+
+    <!-- Étape 1 : Coordonnées -->
+    <div class="card" id="step1-card">
+      <div class="steps-indicator">
+        <div class="step-dot active" id="dot1"></div>
+        <div class="step-dot" id="dot2"></div>
+      </div>
+      <div class="step-badge">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="currentColor"/><text x="6" y="9" font-size="8" text-anchor="middle" fill="currentColor" font-family="sans-serif">1</text></svg>
+        Étape 1 / 2
+      </div>
+      <h1>Vos coordonnées</h1>
+      <p class="subtitle">Ces informations nous permettront d'imprimer votre étiquette de livraison.</p>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="prenom">Prénom *</label>
+          <input type="text" id="prenom" placeholder="Jean" autocomplete="given-name">
+          <span class="error-msg" id="err-prenom">Champ requis</span>
+        </div>
+        <div class="field">
+          <label for="nom">Nom *</label>
+          <input type="text" id="nom" placeholder="Dupont" autocomplete="family-name">
+          <span class="error-msg" id="err-nom">Champ requis</span>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="form-grid full">
+        <div class="field">
+          <label for="email">Email *</label>
+          <input type="email" id="email" placeholder="jean.dupont@email.com" autocomplete="email">
+          <span class="error-msg" id="err-email">Email invalide</span>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="form-grid full">
+        <div class="field">
+          <label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+          <input type="tel" id="telephone" placeholder="06 12 34 56 78" autocomplete="tel">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px">
+        Choisir mon point relais →
+      </button>
+    </div>
+
+    <!-- Étape 2 : Choix du point relais -->
+    <div class="card" id="step2-card" style="display:none">
+      <div class="steps-indicator">
+        <div class="step-dot done"></div>
+        <div class="step-dot active"></div>
+      </div>
+      <div class="step-badge">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="currentColor"/><text x="6" y="9" font-size="8" text-anchor="middle" fill="currentColor" font-family="sans-serif">2</text></svg>
+        Étape 2 / 2
+      </div>
+      <h1>Votre point relais</h1>
+      <p class="subtitle">Saisissez votre adresse pour trouver les points relais les plus proches.</p>
+
+      <!-- Notice de configuration -->
+      <div class="config-notice" id="config-notice">
+        ⚙️ <span><strong>Configuration requise :</strong> Remplacez <code>VOTRE_NUMERO_CLIENT</code> dans le code source par votre numéro de compte Colissimo La Poste.</span>
+      </div>
+
+      <!-- Widget Colissimo -->
+      <div id="colissimo-wrapper">
+        <div id="widget-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <p>Le widget de sélection de point relais<br>s'affichera ici.</p>
+          <small style="font-size:0.78rem; opacity:0.6">Nécessite la configuration du numéro client Colissimo</small>
+        </div>
+        <div id="colissimo-widget-container"></div>
+      </div>
+
+      <!-- Point relais sélectionné -->
+      <div id="selected-relay">
+        <div class="relay-name" id="relay-name-display">—</div>
+        <div class="relay-address" id="relay-address-display">—</div>
+        <div class="relay-id" id="relay-id-display">ID : —</div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-valider" onclick="submitForm()" style="margin-top:20px" disabled>
+        ✓ Valider ma sélection
+      </button>
+      <button class="btn" onclick="backToStep1()" style="background:transparent;color:var(--ink-muted);box-shadow:none;margin-top:4px;font-weight:400;font-size:0.9rem">
+        ← Retour
+      </button>
+    </div>
+
+    <!-- Confirmation -->
+    <div class="card" id="success-card" style="display:none">
+      <div id="success-screen">
+        <div class="big-check">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Merci !</h2>
+        <p>Votre choix de point relais a bien été enregistré.<br>Vous recevrez votre commande à l'adresse sélectionnée.</p>
+        <div style="margin-top:20px; padding:16px; background:var(--bg); border-radius:8px; text-align:left">
+          <div style="font-size:0.78rem;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:8px">Récapitulatif</div>
+          <div id="summary-content" style="font-size:0.9rem;color:var(--ink);line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════ PANNEAU ADMIN ══════════════════════════════ -->
+  <div id="admin-panel">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="admin-header">
+        <span>📋 Réponses collectées <span class="badge-count" id="response-count">0</span></span>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="downloadCSV()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">
+            ⬇ Télécharger CSV
+          </button>
+          <button onclick="clearResponses()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'Syne',sans-serif">
+            🗑 Vider
+          </button>
+        </div>
+      </div>
+      <div id="admin-content">
+        <div class="empty-state">Aucune réponse pour le moment.</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:0.8rem;color:var(--ink-muted);margin-top:12px">
+      Les données sont stockées localement dans le navigateur. Téléchargez le CSV régulièrement.
+    </p>
+  </div>
+
+</main>
+
+<!-- ══════════════════════════════ SCRIPTS ══════════════════════════════ -->
+
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  CONFIGURATION COLISSIMO                                     ║
+  ║  Remplacez VOTRE_NUMERO_CLIENT par votre numéro de compte    ║
+  ║  Colissimo (ex: 900xxxxx)                                    ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<script>
+  const COLISSIMO_ACCOUNT = 'VOTRE_NUMERO_CLIENT'; // ← À MODIFIER
+
+  // ─── STORAGE KEY (modifiable pour isoler les dispatches) ───
+  const STORAGE_KEY = 'neoludis_relais_responses';
+
+  // ─── DATA ───
+  let selectedRelayData = null;
+
+  // ─── ADMIN MODE ───
+  const isAdmin = window.location.search.includes('admin');
+  if (isAdmin) {
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    renderAdminTable();
+  }
+
+  // ─── STEP 1 → STEP 2 ───
+  function goToStep2() {
+    const prenom = document.getElementById('prenom').value.trim();
+    const nom = document.getElementById('nom').value.trim();
+    const email = document.getElementById('email').value.trim();
+    let valid = true;
+
+    // Validation
+    [['prenom', prenom], ['nom', nom]].forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      const err = document.getElementById('err-' + id);
+      if (!val) { el.classList.add('error'); err.style.display = 'block'; valid = false; }
+      else { el.classList.remove('error'); err.style.display = 'none'; }
+    });
+
+    const emailEl = document.getElementById('email');
+    const emailErr = document.getElementById('err-email');
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!email || !emailValid) {
+      emailEl.classList.add('error'); emailErr.style.display = 'block'; valid = false;
+    } else { emailEl.classList.remove('error'); emailErr.style.display = 'none'; }
+
+    if (!valid) return;
+
+    document.getElementById('step1-card').style.display = 'none';
+    document.getElementById('step2-card').style.display = 'block';
+
+    // Charge le widget Colissimo
+    loadColissimoWidget();
+  }
+
+  function backToStep1() {
+    document.getElementById('step2-card').style.display = 'none';
+    document.getElementById('step1-card').style.display = 'block';
+  }
+
+  // ─── WIDGET COLISSIMO ───
+  function loadColissimoWidget() {
+    if (COLISSIMO_ACCOUNT === 'VOTRE_NUMERO_CLIENT') {
+      // Mode démo : afficher le placeholder
+      return;
+    }
+
+    // Masquer placeholder
+    document.getElementById('widget-placeholder').style.display = 'none';
+    document.getElementById('config-notice').style.display = 'none';
+
+    // Charger le script du widget La Poste
+    if (!document.getElementById('colissimo-widget-script')) {
+      const script = document.createElement('script');
+      script.id = 'colissimo-widget-script';
+      script.src = 'https://ws.colissimo.fr/widget-colissimo/js/jquery.plugin.colissimo.min.js';
+      script.onload = initWidget;
+      document.head.appendChild(script);
+
+      const jq = document.createElement('script');
+      jq.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+      jq.onload = () => document.head.appendChild(script);
+      document.head.appendChild(jq);
+    } else {
+      initWidget();
+    }
+  }
+
+  function initWidget() {
+    const container = document.getElementById('colissimo-widget-container');
+    container.style.display = 'block';
+
+    // Initialisation du widget Colissimo officiel
+    // Documentation : https://www.colissimo.fr/portail_colissimo/documents/PRO/API_point_retrait.pdf
+    if (typeof jQuery !== 'undefined') {
+      jQuery('#colissimo-widget-container').colissimo({
+        URLColissimo: 'https://ws.colissimo.fr/widget-colissimo/jsp/colissimo.jsp',
+        codeCountry: 'FR',
+        codeLanguage: 'FR',
+        callBackFrame: 'callbackColissimo',
+        ceCountry: COLISSIMO_ACCOUNT,
+        // Pré-remplir avec l'adresse si dispo
+        reseller: false,
+        fixedAddress: false,
+        height: '400px',
+      });
+    }
+  }
+
+  // ─── CALLBACK DU WIDGET (appelé par Colissimo quand un PR est sélectionné) ───
+  function callbackColissimo(point) {
+    // Colissimo renvoie un objet avec les infos du point relais
+    selectedRelayData = {
+      id: point.identifiant || point.codePostal + '_' + point.nom,
+      nom: point.nom,
+      adresse: [point.adresse1, point.adresse2, point.codePostal, point.localite].filter(Boolean).join(', '),
+      codePostal: point.codePostal,
+      ville: point.localite,
+      typePoint: point.typePoint || 'BPR',
+    };
+
+    // Afficher le résumé
+    document.getElementById('relay-name-display').textContent = selectedRelayData.nom;
+    document.getElementById('relay-address-display').textContent = selectedRelayData.adresse;
+    document.getElementById('relay-id-display').textContent = 'ID : ' + selectedRelayData.id;
+    document.getElementById('selected-relay').style.display = 'block';
+    document.getElementById('btn-valider').disabled = false;
+  }
+
+  // ─── SOUMISSION ───
+  function submitForm() {
+    const record = {
+      date: new Date().toLocaleString('fr-FR'),
+      prenom: document.getElementById('prenom').value.trim(),
+      nom: document.getElementById('nom').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      telephone: document.getElementById('telephone').value.trim(),
+      relay_id: selectedRelayData ? selectedRelayData.id : '(démo)',
+      relay_nom: selectedRelayData ? selectedRelayData.nom : '(démo)',
+      relay_adresse: selectedRelayData ? selectedRelayData.adresse : '(démo)',
+      relay_codepostal: selectedRelayData ? selectedRelayData.codePostal : '',
+      relay_ville: selectedRelayData ? selectedRelayData.ville : '',
+    };
+
+    // Si mode démo (pas de widget), utiliser des données fictives pour tester
+    if (COLISSIMO_ACCOUNT === 'VOTRE_NUMERO_CLIENT' && !selectedRelayData) {
+      record.relay_id = 'DEMO_001';
+      record.relay_nom = '[Mode démo] Point Relais Test';
+      record.relay_adresse = '1 rue de la Paix, 75001 Paris';
+    }
+
+    // Sauvegarder
+    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    existing.push(record);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+
+    // Afficher confirmation
+    document.getElementById('step2-card').style.display = 'none';
+    document.getElementById('success-card').style.display = 'block';
+    document.getElementById('success-screen').style.display = 'block';
+    document.getElementById('summary-content').innerHTML = `
+      <strong>${record.prenom} ${record.nom}</strong><br>
+      ${record.email}<br>
+      📦 ${record.relay_nom}<br>
+      <span style="color:var(--ink-muted);font-size:0.85rem">${record.relay_adresse}</span>
+    `;
+  }
+
+  // ─── ADMIN : RENDU DU TABLEAU ───
+  function renderAdminTable() {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    document.getElementById('response-count').textContent = data.length;
+
+    if (data.length === 0) {
+      document.getElementById('admin-content').innerHTML = '<div class="empty-state">Aucune réponse pour le moment.</div>';
+      return;
+    }
+
+    const cols = ['date', 'prenom', 'nom', 'email', 'telephone', 'relay_nom', 'relay_adresse', 'relay_id', 'relay_codepostal', 'relay_ville'];
+    const labels = ['Date', 'Prénom', 'Nom', 'Email', 'Tél.', 'Point Relais', 'Adresse PR', 'ID PR', 'CP', 'Ville'];
+
+    let html = '<div class="admin-table-wrap"><table><thead><tr>';
+    labels.forEach(l => html += `<th>${l}</th>`);
+    html += '</tr></thead><tbody>';
+    data.forEach(row => {
+      html += '<tr>';
+      cols.forEach(c => html += `<td>${row[c] || '—'}</td>`);
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('admin-content').innerHTML = html;
+  }
+
+  // ─── EXPORT CSV ───
+  function downloadCSV() {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (data.length === 0) { alert('Aucune donnée à exporter.'); return; }
+
+    const cols = ['date', 'prenom', 'nom', 'email', 'telephone', 'relay_nom', 'relay_adresse', 'relay_id', 'relay_codepostal', 'relay_ville'];
+    const labels = ['Date', 'Prénom', 'Nom', 'Email', 'Téléphone', 'Point Relais', 'Adresse PR', 'ID PR', 'Code Postal', 'Ville'];
+
+    const escape = v => '"' + String(v || '').replace(/"/g, '""') + '"';
+    let csv = '\uFEFF'; // BOM pour Excel
+    csv += labels.map(escape).join(';') + '\n';
+    data.forEach(row => { csv += cols.map(c => escape(row[c])).join(';') + '\n'; });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `points-relais_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ─── VIDER LES RÉPONSES ───
+  function clearResponses() {
+    if (!confirm('Vider toutes les réponses ? (assurez-vous d\'avoir téléchargé le CSV avant)')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    renderAdminTable();
+  }
+</script>
+
+</body>
+</html>
