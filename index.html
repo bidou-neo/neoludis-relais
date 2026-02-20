@@ -156,24 +156,12 @@
 </main>
 
 <!-- Widget Colissimo -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-// Charger le plugin Colissimo dynamiquement et attendre qu'il soit prêt
-function loadColissimoWidget(callback) {
-  if (typeof frameColissimoOpen !== 'undefined') { callback(); return; }
-  const script = document.createElement('script');
-  script.src = 'https://ws.colissimo.fr/widget-colissimo/js/jquery.plugin.colissimo.min.js';
-  script.onload = () => { setTimeout(callback, 300); };
-  script.onerror = () => { 
-    // Essayer l'autre URL (widget-point-retrait)
-    const script2 = document.createElement('script');
-    script2.src = 'https://ws.colissimo.fr/widget-point-retrait/resources/js/jquery.plugin.colissimo.min.js';
-    script2.onload = () => { setTimeout(callback, 300); };
-    document.head.appendChild(script2);
-  };
-  document.head.appendChild(script);
-}
-</script>
+<!-- Librairies requises pour le widget Colissimo v2 -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet" />
+<script src="https://ws.colissimo.fr/widget-colissimo/js/jquery.plugin.colissimo.min.js"></script>
+
 <script>
 const STORAGE_KEY = 'neoludis_relais_responses';
 let selectedRelayData = null;
@@ -216,7 +204,7 @@ function backToStep1() {
   btn.innerHTML = 'Choisir mon point relais →';
   btn.disabled = false;
   // Fermer le widget proprement
-  // widget fermé automatiquement
+  try { $('#widget-container').frameColissimoClose(); } catch(e) {}
 }
 
 async function initWidget() {
@@ -231,34 +219,19 @@ async function initWidget() {
     }
 
     const token = data.token;
-    // Charger le plugin puis initialiser avec widget_colissimo_loadPDR
-    loadColissimoWidget(() => {
-      if (typeof widget_colissimo_loadPDR === 'undefined') {
-        document.getElementById('loading-widget').innerHTML = '❌ Widget Colissimo indisponible.';
-        return;
-      }
-      document.getElementById('loading-widget').style.display = 'none';
-      
-      // Définir le callback global AVANT d'appeler le widget
-      colissimo_widget_callBack = function(point) { onRelaisSelected(point); };
-
-      widget_colissimo_loadPDR({
-        token: token,
-        URLColissimo: 'https://ws.colissimo.fr',
-        ceCountry: 'FR',
-        ceZipCode: '',
-        ceTown: '',
-        ceAddress: '',
-        dyWeight: 1000,
-        dyPreparationTime: 0,
-        origin: 'quiet-faun-b6a1db.netlify.app',
-        filterRelay: '',
-        ceLat: '',
-        ceLong: '',
-        callBackSelect: 'onRelaisSelected',
-        callBackClose: '',
-        colissimoContainer: 'widget-container',
-      });
+    document.getElementById('loading-widget').style.display = 'none';
+    // Utiliser la méthode officielle jQuery du plugin Colissimo v2
+    $('#widget-container').frameColissimoOpen({
+      URLColissimo: 'https://ws.colissimo.fr',
+      callBackFrame: 'onRelaisSelected',
+      ceCountry: 'FR',
+      ceAddress: '',
+      ceZipCode: '',
+      ceTown: '',
+      dyWeight: 1000,
+      filterRelay: '1',
+      origin: 'WIDGET',
+      token: token
     });
 
   } catch(err) {
