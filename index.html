@@ -282,7 +282,7 @@ function submitForm() {
   document.getElementById('step2-card').style.display = 'none';
   document.getElementById('success-card').style.display = 'block';
   document.getElementById('summary-content').innerHTML = `
-    ${record.commande ? '<span style='font-size:0.8rem;color:var(--ink-muted)'>Commande : '+record.commande+'</span><br>' : ''}<strong>${record.prenom} ${record.nom}</strong><br>${record.email}<br>
+    ${record.commande ? '<span style="font-size:0.8rem;color:var(--ink-muted)">Commande : ' + record.commande + '</span><br>' : ''}<strong>${record.prenom} ${record.nom}</strong><br>${record.email}<br>
     📦 ${record.relay_nom}<br>
     <span style="color:var(--ink-muted);font-size:0.85rem">${record.relay_adresse}, ${record.relay_codepostal} ${record.relay_ville}</span>
   `;
