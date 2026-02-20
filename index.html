@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Choisir mon point relais — Neoludis</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
   :root {
     --bg: #F5F2EC; --surface: #fff; --ink: #1A1A1A; --ink-muted: #6B6B6B;
@@ -19,7 +18,7 @@
   .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; }
   .logo span { color: var(--accent); }
   header p { font-size: 0.85rem; color: rgba(255,255,255,0.55); font-weight: 300; }
-  main { max-width: 720px; margin: 48px auto; padding: 0 20px; }
+  main { max-width: 760px; margin: 48px auto; padding: 0 20px; }
   .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 36px; margin-bottom: 24px; border: 1px solid var(--border); }
   h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6rem; margin-bottom: 6px; }
   .subtitle { color: var(--ink-muted); font-size: 0.95rem; margin-bottom: 28px; font-weight: 300; }
@@ -42,38 +41,24 @@
   .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px rgba(232,67,26,0.25); }
   .btn-primary:hover { box-shadow: 0 6px 20px rgba(232,67,26,0.35); }
   .btn-primary:disabled { background: #D0CEC9; box-shadow: none; cursor: not-allowed; }
-  .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
-  .search-row input { flex: 1; margin: 0; }
-  .search-row button { padding: 12px 18px; background: var(--accent); color: white; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
-  .search-row button:hover { background: #d03a14; }
-  #map { height: 320px; border-radius: 8px; border: 1.5px solid var(--border); margin-bottom: 16px; }
-  #relay-list { max-height: 300px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 8px; }
-  .relay-item { padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; display: flex; align-items: flex-start; gap: 12px; }
-  .relay-item:last-child { border-bottom: none; }
-  .relay-item:hover { background: var(--accent-light); }
-  .relay-item.selected { background: var(--success-light); border-left: 3px solid var(--success); }
-  .relay-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
-  .relay-item.selected .relay-dot { background: var(--success); }
-  .relay-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; }
-  .relay-addr { font-size: 0.82rem; color: var(--ink-muted); }
-  .relay-type-badge { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
-  .type-BUR { background: #E3F0FF; color: #1a5ca8; }
-  .type-REL { background: #FFF0EC; color: var(--accent); }
-  .type-APC { background: #F0FFF4; color: var(--success); }
-  .relay-dist { font-size: 0.78rem; color: var(--ink-muted); margin-top: 3px; }
-  .relay-item.selected .relay-dist { color: var(--success); }
-  .list-placeholder { padding: 32px; text-align: center; color: var(--ink-muted); font-size: 0.9rem; }
-  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
+  .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  /* Widget Colissimo */
+  #widget-container { min-height: 400px; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  #loading-widget { display: flex; align-items: center; justify-content: center; min-height: 400px; color: var(--ink-muted); font-size: 0.9rem; gap: 10px; }
+  .spinner-dark { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  /* Point sélectionné */
   #selected-relay { display: none; background: var(--success-light); border: 1.5px solid #A8E6C5; border-radius: 10px; padding: 16px 18px; margin-top: 16px; }
   .relay-name-big { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--success); margin-bottom: 4px; }
   .relay-addr-big { font-size: 0.85rem; color: var(--ink-muted); }
   .relay-id-big { font-size: 0.78rem; color: var(--success); margin-top: 6px; font-weight: 500; }
+  /* Succès */
   #success-card { display: none; }
   .big-check { width: 72px; height: 72px; background: var(--success-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 2px solid #A8E6C5; }
   #success-screen { text-align: center; }
   #success-screen h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.4rem; margin-bottom: 8px; color: var(--success); }
   #success-screen p { color: var(--ink-muted); font-size: 0.95rem; line-height: 1.6; }
+  /* Admin */
   #admin-panel { display: none; }
   .admin-header { background: var(--ink); color: white; padding: 14px 20px; border-radius: var(--radius) var(--radius) 0 0; font-family: 'Syne', sans-serif; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
   .badge-count { background: var(--accent); color: white; font-size: 0.75rem; font-weight: 700; padding: 2px 9px; border-radius: 100px; }
@@ -90,7 +75,6 @@
     main { margin: 24px auto; }
     .card { padding: 24px 20px; }
     header { padding: 14px 20px; }
-    .search-row { flex-direction: column; }
   }
 </style>
 </head>
@@ -103,6 +87,7 @@
 </header>
 <main>
   <div id="form-section">
+    <!-- Étape 1 -->
     <div class="card" id="step1-card">
       <div class="steps-indicator"><div class="step-dot active"></div><div class="step-dot"></div></div>
       <div class="step-badge">① Étape 1 / 2</div>
@@ -116,29 +101,31 @@
       <div class="form-grid full"><div class="field"><label for="email">Email *</label><input type="email" id="email" placeholder="jean.dupont@email.com"><span class="error-msg" id="err-email">Email invalide</span></div></div>
       <div style="height:14px"></div>
       <div class="form-grid full"><div class="field"><label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="tel" id="telephone" placeholder="06 12 34 56 78"></div></div>
-      <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px">Choisir mon point relais →</button>
+      <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px" id="btn-step2">Choisir mon point relais →</button>
     </div>
 
+    <!-- Étape 2 -->
     <div class="card" id="step2-card" style="display:none">
       <div class="steps-indicator"><div class="step-dot done"></div><div class="step-dot active"></div></div>
       <div class="step-badge">② Étape 2 / 2</div>
       <h1>Votre point relais</h1>
-      <p class="subtitle">Entrez votre code postal pour voir les points La Poste à proximité.</p>
-      <div class="search-row">
-        <input type="text" id="search-address" placeholder="Ex : 76520 ou 76520 Franqueville-Saint-Pierre" onkeydown="if(event.key==='Enter') searchRelays()">
-        <button onclick="searchRelays()" id="search-btn">Rechercher</button>
+      <p class="subtitle">Recherchez et sélectionnez votre point relais Colissimo le plus proche.</p>
+
+      <div id="widget-container">
+        <div id="loading-widget"><span class="spinner-dark"></span> Chargement du widget…</div>
       </div>
-      <div id="map"></div>
-      <div id="relay-list"><div class="list-placeholder">Saisissez votre code postal pour afficher les points relais proches.</div></div>
+
       <div id="selected-relay">
         <div class="relay-name-big" id="relay-name-display"></div>
         <div class="relay-addr-big" id="relay-address-display"></div>
         <div class="relay-id-big" id="relay-id-display"></div>
       </div>
+
       <button class="btn btn-primary" id="btn-valider" onclick="submitForm()" style="margin-top:20px" disabled>✓ Valider ma sélection</button>
       <button class="btn" onclick="backToStep1()" style="background:transparent;color:var(--ink-muted);box-shadow:none;font-weight:400;font-size:0.9rem">← Retour</button>
     </div>
 
+    <!-- Confirmation -->
     <div class="card" id="success-card">
       <div id="success-screen">
         <div class="big-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -152,6 +139,7 @@
     </div>
   </div>
 
+  <!-- Admin -->
   <div id="admin-panel">
     <div class="card" style="padding:0;overflow:hidden">
       <div class="admin-header">
@@ -167,23 +155,17 @@
   </div>
 </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Widget Colissimo -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://ws.colissimo.fr/widget-colissimo/js/jquery.plugin.colissimo.min.js"></script>
 <script>
 const STORAGE_KEY = 'neoludis_relais_responses';
-let map, selectedRelayData = null, markers = [], userMarker = null;
-const TYPE_LABELS = { 'BUR': '🏣 Bureau de Poste', 'REL': '🏪 Relais Poste', 'APC': '📮 Agence Postale' };
-const TYPE_COLORS = { 'BUR': '#1a5ca8', 'REL': '#E8431A', 'APC': '#1A7A4A' };
+let selectedRelayData = null;
 
 if (window.location.search.includes('admin')) {
   document.getElementById('form-section').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
   renderAdminTable();
-}
-
-function initMap() {
-  if (map) return;
-  map = L.map('map').setView([46.6, 2.3], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
 }
 
 function goToStep2() {
@@ -201,187 +183,85 @@ function goToStep2() {
     emailEl.classList.add('error'); emailErr.style.display = 'block'; valid = false;
   } else { emailEl.classList.remove('error'); emailErr.style.display = 'none'; }
   if (!valid) return;
+
+  const btn = document.getElementById('btn-step2');
+  btn.innerHTML = '<span class="spinner"></span> Chargement…';
+  btn.disabled = true;
+
   document.getElementById('step1-card').style.display = 'none';
   document.getElementById('step2-card').style.display = 'block';
-  setTimeout(initMap, 100);
+  initWidget();
 }
 
 function backToStep1() {
   document.getElementById('step2-card').style.display = 'none';
   document.getElementById('step1-card').style.display = 'block';
+  const btn = document.getElementById('btn-step2');
+  btn.innerHTML = 'Choisir mon point relais →';
+  btn.disabled = false;
+  // Fermer le widget proprement
+  try { frameColissimoClose(); } catch(e) {}
 }
 
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function parseRecords(records, centerLat, centerLon) {
-  return records.map(r => {
-    const rlat = r.latitude || null;
-    const rlon = r.longitude || null;
-    const dist = (rlat && rlon) ? getDistance(centerLat, centerLon, rlat, rlon) : 9999;
-    const carac = r.caracteristique_du_site || '';
-    let type = 'REL';
-    if (carac.includes('Bureau')) type = 'BUR';
-    else if (carac.includes('Agence')) type = 'APC';
-    return {
-      id: r.identifiant_a || r.libelle_du_site || 'N/A',
-      nom: r.libelle_du_site || 'Point Relais',
-      adresse: [r.adresse, r.code_postal, r.localite].filter(Boolean).join(', '),
-      codePostal: r.code_postal || '',
-      ville: r.localite || '',
-      lat: rlat, lon: rlon, dist,
-      type: type,
-      typeLabel: TYPE_LABELS[type] || '🏪 Point Relais',
-    };
-  }).filter(r => r.lat && r.lon);
-}
-
-async function searchRelays() {
-  const address = document.getElementById('search-address').value.trim();
-  if (!address) return;
-  const btn = document.getElementById('search-btn');
-  btn.innerHTML = '<span class="spinner"></span>';
-  btn.disabled = true;
-  document.getElementById('relay-list').innerHTML = '<div class="list-placeholder"><span class="spinner"></span> Recherche en cours…</div>';
-
+async function initWidget() {
   try {
-    // Extraire le code postal s'il est présent
-    const cpMatch = address.match(/\b(\d{5})\b/);
-    const codePostal = cpMatch ? cpMatch[1] : '';
+    // Récupérer le token via la fonction Netlify
+    const res = await fetch('/.netlify/functions/auth-colissimo', { method: 'POST' });
+    const data = await res.json();
 
-    // 1. Géocoder via l'API adresse officielle française
-    let lat, lon;
-    const geoUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1&type=municipality`;
-    const geoRes = await fetch(geoUrl);
-    const geoData = await geoRes.json();
-
-    if (geoData.features && geoData.features.length > 0) {
-      lon = geoData.features[0].geometry.coordinates[0];
-      lat = geoData.features[0].geometry.coordinates[1];
-    } else {
-      // Fallback : chercher juste par code postal
-      const geoUrl2 = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(codePostal || address)}&limit=1`;
-      const geoRes2 = await fetch(geoUrl2);
-      const geoData2 = await geoRes2.json();
-      if (geoData2.features && geoData2.features.length > 0) {
-        lon = geoData2.features[0].geometry.coordinates[0];
-        lat = geoData2.features[0].geometry.coordinates[1];
-      } else {
-        document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Adresse introuvable. Essayez avec un code postal.</div>';
-        btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
-      }
+    if (!data.token) {
+      document.getElementById('loading-widget').innerHTML = '❌ Erreur d\'authentification. Veuillez réessayer.';
+      return;
     }
 
-    map.setView([lat, lon], 14);
-    if (userMarker) map.removeLayer(userMarker);
-    userMarker = L.circleMarker([lat, lon], { radius: 8, color: '#E8431A', fillColor: '#E8431A', fillOpacity: 1 })
-      .addTo(map).bindPopup('Votre adresse').openPopup();
+    // Initialiser le widget officiel Colissimo
+    document.getElementById('loading-widget').style.display = 'none';
 
-    // 2. Rechercher dans dataNOVA par code postal (API v1 - plus simple et stable)
-    let relays = [];
-    const cp = codePostal;
-
-    if (cp) {
-      // Appel direct à dataNOVA (pas besoin de proxy, CORS OK)
-      const url = `https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-poincont2/lines?size=50&qs=code_postal:${cp}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        relays = parseRecords(data.results, lat, lon);
-      }
-    }
-
-    // Si rien ou pas de CP, chercher par localité
-    if (relays.length === 0) {
-      const cityName = geoData.features && geoData.features.length > 0
-        ? (geoData.features[0].properties.city || '')
-        : address.replace(/\d{5}\s*/g, '').trim();
-      if (cityName.length > 2) {
-        const url2 = `https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-poincont2/lines?size=50&qs=localite:${encodeURIComponent(cityName.toUpperCase())}`;
-        const res2 = await fetch(url2, { headers: { 'Accept': 'application/json' } });
-        const data2 = await res2.json();
-        if (data2.results && data2.results.length > 0) {
-          relays = parseRecords(data2.results, lat, lon);
-        }
-      }
-    }
-
-    // Trier par distance et prendre les 15 plus proches dans un rayon de 10km
-    relays = relays.filter(r => r.dist < 10000).sort((a,b) => a.dist - b.dist).slice(0, 15);
-
-    if (relays.length === 0) {
-      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Aucun point relais La Poste trouvé. Essayez un code postal voisin.</div>';
-      btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
-    }
-
-    displayRelays(relays);
+    frameColissimoOpen({
+      token: data.token,
+      enableTarget: 'widget-container',
+      callBackFrame: 'onRelaisSelected',
+      codeCountry: 'FR',
+      codeLanguage: 'FR',
+      weight: '1000',
+    });
 
   } catch(err) {
-    console.error('Erreur recherche:', err);
-    document.getElementById('relay-list').innerHTML = `<div class="list-placeholder">Erreur : ${err.message}. Réessayez.</div>`;
+    document.getElementById('loading-widget').innerHTML = '❌ Erreur de chargement. Veuillez réessayer.';
+    console.error(err);
   }
-  btn.innerHTML = 'Rechercher'; btn.disabled = false;
 }
 
-function displayRelays(relays) {
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
-  let html = '';
-  relays.forEach((relay, i) => {
-    const color = TYPE_COLORS[relay.type] || '#E8431A';
-    const icon = L.divIcon({
-      html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,
-      iconSize: [14,14], iconAnchor: [7,7]
-    });
-    const marker = L.marker([relay.lat, relay.lon], { icon }).addTo(map)
-      .bindPopup(`<strong>${relay.nom}</strong><br>${relay.adresse}`);
-    marker.on('click', () => selectRelay(relay, i));
-    markers.push(marker);
-    const distStr = relay.dist < 1000 ? Math.round(relay.dist)+'m' : (relay.dist/1000).toFixed(1)+'km';
-    html += `<div class="relay-item" id="relay-item-${i}" onclick='selectRelay(${JSON.stringify(relay).replace(/'/g,"&#39;")}, ${i})'>
-      <div class="relay-dot"></div>
-      <div style="flex:1">
-        <div class="relay-name">${relay.nom}</div>
-        <div class="relay-addr">${relay.adresse}</div>
-        <span class="relay-type-badge type-${relay.type}">${relay.typeLabel}</span>
-        <div class="relay-dist">📍 ${distStr}</div>
-      </div>
-    </div>`;
-  });
-  document.getElementById('relay-list').innerHTML = html;
-}
+// Callback appelé par le widget quand un point est sélectionné
+function onRelaisSelected(point) {
+  if (!point || !point.identifiant) return;
+  selectedRelayData = point;
 
-function selectRelay(relay, index) {
-  selectedRelayData = relay;
-  document.querySelectorAll('.relay-item').forEach(el => el.classList.remove('selected'));
-  const item = document.getElementById('relay-item-'+index);
-  if (item) { item.classList.add('selected'); item.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
-  if (relay.lat && relay.lon) { map.setView([relay.lat, relay.lon], 16); if (markers[index]) markers[index].openPopup(); }
-  document.getElementById('relay-name-display').textContent = relay.nom;
-  document.getElementById('relay-address-display').textContent = relay.adresse;
-  document.getElementById('relay-id-display').textContent = 'ID : '+relay.id;
+  document.getElementById('relay-name-display').textContent = point.nom || point.libelle || '';
+  document.getElementById('relay-address-display').textContent = [point.adresse1, point.codePostal, point.localite].filter(Boolean).join(', ');
+  document.getElementById('relay-id-display').textContent = 'ID : ' + point.identifiant;
   document.getElementById('selected-relay').style.display = 'block';
   document.getElementById('btn-valider').disabled = false;
+
+  // Fermer le widget
+  try { frameColissimoClose(); } catch(e) {}
 }
 
 function submitForm() {
   if (!selectedRelayData) return;
+  const p = selectedRelayData;
   const record = {
     date: new Date().toLocaleString('fr-FR'),
     prenom: document.getElementById('prenom').value.trim(),
     nom: document.getElementById('nom').value.trim(),
     email: document.getElementById('email').value.trim(),
     telephone: document.getElementById('telephone').value.trim(),
-    relay_id: selectedRelayData.id,
-    relay_nom: selectedRelayData.nom,
-    relay_adresse: selectedRelayData.adresse,
-    relay_codepostal: selectedRelayData.codePostal,
-    relay_ville: selectedRelayData.ville,
-    relay_type: selectedRelayData.typeLabel,
+    relay_id: p.identifiant || '',
+    relay_nom: p.nom || p.libelle || '',
+    relay_adresse: p.adresse1 || '',
+    relay_codepostal: p.codePostal || '',
+    relay_ville: p.localite || '',
+    relay_type: p.typeDePoint || '',
   };
   const existing = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   existing.push(record);
@@ -391,7 +271,7 @@ function submitForm() {
   document.getElementById('summary-content').innerHTML = `
     <strong>${record.prenom} ${record.nom}</strong><br>${record.email}<br>
     📦 ${record.relay_nom}<br>
-    <span style="color:var(--ink-muted);font-size:0.85rem">${record.relay_adresse}</span>
+    <span style="color:var(--ink-muted);font-size:0.85rem">${record.relay_adresse}, ${record.relay_codepostal} ${record.relay_ville}</span>
   `;
 }
 
@@ -413,7 +293,7 @@ function downloadCSV() {
   const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   if (!data.length) { alert('Aucune donnée.'); return; }
   const cols = ['date','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
-  const labels = ['Date','Prénom','Nom','Email','Téléphone','Point Relais','Adresse','ID','Code Postal','Ville','Type'];
+  const labels = ['Date','Prénom','Nom','Email','Téléphone','Point Relais','Adresse','ID Colissimo','Code Postal','Ville','Type'];
   const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
   let csv = '\uFEFF'+labels.map(esc).join(';')+'\n';
   data.forEach(row => { csv += cols.map(c => esc(row[c])).join(';')+'\n'; });
