@@ -170,9 +170,15 @@ const STORAGE_KEY = 'neoludis_relais_responses';
 let selectedRelayData = null;
 
 if (window.location.search.includes('admin')) {
-  document.getElementById('form-section').style.display = 'none';
-  document.getElementById('admin-panel').style.display = 'block';
-  renderAdminTable();
+  const pwd = prompt('Mot de passe admin :');
+  if (pwd === 'Neoludis2024!') {
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    renderAdminTable();
+  } else {
+    alert('Mot de passe incorrect.');
+    window.location.href = '/';
+  }
 }
 
 function goToStep2() {
