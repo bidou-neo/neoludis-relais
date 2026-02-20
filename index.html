@@ -157,7 +157,23 @@
 
 <!-- Widget Colissimo -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://ws.colissimo.fr/widget-colissimo/js/jquery.plugin.colissimo.min.js"></script>
+<script>
+// Charger le plugin Colissimo dynamiquement et attendre qu'il soit prêt
+function loadColissimoWidget(callback) {
+  if (typeof frameColissimoOpen !== 'undefined') { callback(); return; }
+  const script = document.createElement('script');
+  script.src = 'https://ws.colissimo.fr/widget-colissimo/js/jquery.plugin.colissimo.min.js';
+  script.onload = () => { setTimeout(callback, 300); };
+  script.onerror = () => { 
+    // Essayer l'autre URL (widget-point-retrait)
+    const script2 = document.createElement('script');
+    script2.src = 'https://ws.colissimo.fr/widget-point-retrait/resources/js/jquery.plugin.colissimo.min.js';
+    script2.onload = () => { setTimeout(callback, 300); };
+    document.head.appendChild(script2);
+  };
+  document.head.appendChild(script);
+}
+</script>
 <script>
 const STORAGE_KEY = 'neoludis_relais_responses';
 let selectedRelayData = null;
@@ -214,16 +230,22 @@ async function initWidget() {
       return;
     }
 
-    // Initialiser le widget officiel Colissimo
-    document.getElementById('loading-widget').style.display = 'none';
-
-    frameColissimoOpen({
-      token: data.token,
-      enableTarget: 'widget-container',
-      callBackFrame: 'onRelaisSelected',
-      codeCountry: 'FR',
-      codeLanguage: 'FR',
-      weight: '1000',
+    const token = data.token;
+    // Charger le plugin puis ouvrir le widget
+    loadColissimoWidget(() => {
+      if (typeof frameColissimoOpen === 'undefined') {
+        document.getElementById('loading-widget').innerHTML = '❌ Widget Colissimo indisponible.';
+        return;
+      }
+      document.getElementById('loading-widget').style.display = 'none';
+      frameColissimoOpen({
+        token: token,
+        enableTarget: 'widget-container',
+        callBackFrame: 'onRelaisSelected',
+        codeCountry: 'FR',
+        codeLanguage: 'FR',
+        weight: '1000',
+      });
     });
 
   } catch(err) {
