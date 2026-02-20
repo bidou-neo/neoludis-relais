@@ -1,10 +1,5 @@
-
-
 // Fonction Netlify — Authentification Colissimo
-// Le mot de passe est stocké dans les variables d'environnement Netlify (jamais visible dans le code)
-
 exports.handler = async function(event, context) {
-  // Autoriser les requêtes CORS depuis notre propre site
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -12,7 +7,6 @@ exports.handler = async function(event, context) {
     'Content-Type': 'application/json',
   };
 
-  // Répondre aux requêtes OPTIONS (preflight CORS)
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
@@ -21,7 +15,6 @@ exports.handler = async function(event, context) {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Méthode non autorisée' }) };
   }
 
-  // Récupérer les variables d'environnement (stockées de façon sécurisée dans Netlify)
   const accountNumber = process.env.COLISSIMO_ACCOUNT;
   const password = process.env.COLISSIMO_PASSWORD;
 
@@ -29,22 +22,36 @@ exports.handler = async function(event, context) {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Variables d\'environnement manquantes. Configurez COLISSIMO_ACCOUNT et COLISSIMO_PASSWORD dans Netlify.' })
+      body: JSON.stringify({ error: 'Variables d\'environnement manquantes.' })
     };
   }
 
   try {
-    // Appel au WS d'authentification Colissimo
     const response = await fetch('https://ws.colissimo.fr/widget-point-retrait/rest/authenticate.rest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         login: accountNumber,
         password: password,
+        lang: 'FR',
       }),
     });
 
-    const data = await response.json();
+    // Lire la réponse brute pour diagnostiquer
+    const rawText = await response.text();
+    console.log('Status Colissimo:', response.status);
+    console.log('Réponse Colissimo brute:', rawText);
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch(e) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Réponse non-JSON de Colissimo', raw: rawText, status: response.status }),
+      };
+    }
 
     if (data.token) {
       return {
@@ -56,7 +63,7 @@ exports.handler = async function(event, context) {
       return {
         statusCode: 401,
         headers,
-        body: JSON.stringify({ error: 'Authentification échouée', details: data }),
+        body: JSON.stringify({ error: 'Authentification échouée', details: data, status: response.status }),
       };
     }
   } catch (err) {
