@@ -15,15 +15,12 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
-
   header { background: var(--ink); color: white; padding: 18px 32px; display: flex; align-items: center; gap: 16px; }
   .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; }
   .logo span { color: var(--accent); }
   header p { font-size: 0.85rem; color: rgba(255,255,255,0.55); font-weight: 300; }
-
   main { max-width: 720px; margin: 48px auto; padding: 0 20px; }
   .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 36px; margin-bottom: 24px; border: 1px solid var(--border); }
-
   h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6rem; margin-bottom: 6px; }
   .subtitle { color: var(--ink-muted); font-size: 0.95rem; margin-bottom: 28px; font-weight: 300; }
   .step-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-light); color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 12px; border-radius: 100px; margin-bottom: 16px; }
@@ -31,65 +28,52 @@
   .step-dot { height: 4px; flex: 1; border-radius: 2px; background: var(--border); transition: background 0.3s; }
   .step-dot.active { background: var(--accent); }
   .step-dot.done { background: var(--success); }
-
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .form-grid.full { grid-template-columns: 1fr; }
-  .field { display: flex; flex-direction: column; margin-bottom: 0; }
+  .field { display: flex; flex-direction: column; }
   label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--ink-muted); margin-bottom: 6px; letter-spacing: 0.02em; text-transform: uppercase; }
   input[type="text"], input[type="email"], input[type="tel"] { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; background: var(--bg); color: var(--ink); transition: border-color 0.2s; outline: none; }
   input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,67,26,0.1); background: white; }
   input::placeholder { color: #BBBAB4; }
   input.error { border-color: var(--accent); }
   .error-msg { color: var(--accent); font-size: 0.82rem; margin-top: 4px; display: none; }
-
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.95rem; cursor: pointer; border: none; transition: transform 0.15s, box-shadow 0.15s; width: 100%; margin-top: 8px; }
   .btn:active { transform: scale(0.98); }
   .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px rgba(232,67,26,0.25); }
   .btn-primary:hover { box-shadow: 0 6px 20px rgba(232,67,26,0.35); }
   .btn-primary:disabled { background: #D0CEC9; box-shadow: none; cursor: not-allowed; }
-
-  /* Recherche adresse */
   .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
   .search-row input { flex: 1; margin: 0; }
   .search-row button { padding: 12px 18px; background: var(--accent); color: white; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
   .search-row button:hover { background: #d03a14; }
-
-  /* Carte */
   #map { height: 320px; border-radius: 8px; border: 1.5px solid var(--border); margin-bottom: 16px; }
-
-  /* Liste points relais */
-  #relay-list { max-height: 280px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 8px; }
+  #relay-list { max-height: 300px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 8px; }
   .relay-item { padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; display: flex; align-items: flex-start; gap: 12px; }
   .relay-item:last-child { border-bottom: none; }
   .relay-item:hover { background: var(--accent-light); }
   .relay-item.selected { background: var(--success-light); border-left: 3px solid var(--success); }
   .relay-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
   .relay-item.selected .relay-dot { background: var(--success); }
-  .relay-info .relay-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; }
-  .relay-info .relay-addr { font-size: 0.82rem; color: var(--ink-muted); }
-  .relay-info .relay-dist { font-size: 0.78rem; color: var(--accent); font-weight: 500; margin-top: 3px; }
+  .relay-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; }
+  .relay-addr { font-size: 0.82rem; color: var(--ink-muted); }
+  .relay-type { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
+  .type-BUR { background: #E3F0FF; color: #1a5ca8; }
+  .type-REL { background: #FFF0EC; color: var(--accent); }
+  .type-APC { background: #F0FFF4; color: var(--success); }
+  .relay-dist { font-size: 0.78rem; color: var(--ink-muted); margin-top: 3px; }
   .relay-item.selected .relay-dist { color: var(--success); }
-
   .list-placeholder { padding: 32px; text-align: center; color: var(--ink-muted); font-size: 0.9rem; }
-
-  /* Spinner */
-  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Point sélectionné */
   #selected-relay { display: none; background: var(--success-light); border: 1.5px solid #A8E6C5; border-radius: 10px; padding: 16px 18px; margin-top: 16px; }
   .relay-name-big { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--success); margin-bottom: 4px; }
   .relay-addr-big { font-size: 0.85rem; color: var(--ink-muted); }
   .relay-id-big { font-size: 0.78rem; color: var(--success); margin-top: 6px; font-weight: 500; }
-
-  /* Succès */
   #success-card { display: none; }
   .big-check { width: 72px; height: 72px; background: var(--success-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 2px solid #A8E6C5; }
   #success-screen { text-align: center; }
   #success-screen h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.4rem; margin-bottom: 8px; color: var(--success); }
   #success-screen p { color: var(--ink-muted); font-size: 0.95rem; line-height: 1.6; }
-
-  /* Admin */
   #admin-panel { display: none; }
   .admin-header { background: var(--ink); color: white; padding: 14px 20px; border-radius: var(--radius) var(--radius) 0 0; font-family: 'Syne', sans-serif; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
   .badge-count { background: var(--accent); color: white; font-size: 0.75rem; font-weight: 700; padding: 2px 9px; border-radius: 100px; }
@@ -101,7 +85,6 @@
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: #FAFAF8; }
   .empty-state { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 0.9rem; }
-
   @media (max-width: 520px) {
     .form-grid { grid-template-columns: 1fr; }
     main { margin: 24px auto; }
@@ -112,84 +95,48 @@
 </style>
 </head>
 <body>
-
 <header>
   <div>
     <div class="logo">Neo<span>ludis</span></div>
     <p>Sélection de point relais Colissimo</p>
   </div>
 </header>
-
 <main>
   <div id="form-section">
-
     <!-- Étape 1 -->
     <div class="card" id="step1-card">
-      <div class="steps-indicator">
-        <div class="step-dot active"></div>
-        <div class="step-dot"></div>
-      </div>
+      <div class="steps-indicator"><div class="step-dot active"></div><div class="step-dot"></div></div>
       <div class="step-badge">① Étape 1 / 2</div>
       <h1>Vos coordonnées</h1>
       <p class="subtitle">Ces informations nous permettront d'imprimer votre étiquette de livraison.</p>
-
       <div class="form-grid">
-        <div class="field">
-          <label for="prenom">Prénom *</label>
-          <input type="text" id="prenom" placeholder="Jean" autocomplete="given-name">
-          <span class="error-msg" id="err-prenom">Champ requis</span>
-        </div>
-        <div class="field">
-          <label for="nom">Nom *</label>
-          <input type="text" id="nom" placeholder="Dupont" autocomplete="family-name">
-          <span class="error-msg" id="err-nom">Champ requis</span>
-        </div>
+        <div class="field"><label for="prenom">Prénom *</label><input type="text" id="prenom" placeholder="Jean" autocomplete="given-name"><span class="error-msg" id="err-prenom">Champ requis</span></div>
+        <div class="field"><label for="nom">Nom *</label><input type="text" id="nom" placeholder="Dupont" autocomplete="family-name"><span class="error-msg" id="err-nom">Champ requis</span></div>
       </div>
       <div style="height:14px"></div>
-      <div class="form-grid full">
-        <div class="field">
-          <label for="email">Email *</label>
-          <input type="email" id="email" placeholder="jean.dupont@email.com">
-          <span class="error-msg" id="err-email">Email invalide</span>
-        </div>
-      </div>
+      <div class="form-grid full"><div class="field"><label for="email">Email *</label><input type="email" id="email" placeholder="jean.dupont@email.com"><span class="error-msg" id="err-email">Email invalide</span></div></div>
       <div style="height:14px"></div>
-      <div class="form-grid full">
-        <div class="field">
-          <label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
-          <input type="tel" id="telephone" placeholder="06 12 34 56 78">
-        </div>
-      </div>
+      <div class="form-grid full"><div class="field"><label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="tel" id="telephone" placeholder="06 12 34 56 78"></div></div>
       <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px">Choisir mon point relais →</button>
     </div>
 
     <!-- Étape 2 -->
     <div class="card" id="step2-card" style="display:none">
-      <div class="steps-indicator">
-        <div class="step-dot done"></div>
-        <div class="step-dot active"></div>
-      </div>
+      <div class="steps-indicator"><div class="step-dot done"></div><div class="step-dot active"></div></div>
       <div class="step-badge">② Étape 2 / 2</div>
       <h1>Votre point relais</h1>
-      <p class="subtitle">Entrez votre adresse pour voir les points relais Colissimo à proximité.</p>
-
+      <p class="subtitle">Entrez votre code postal ou adresse pour voir les points relais La Poste à proximité.</p>
       <div class="search-row">
-        <input type="text" id="search-address" placeholder="Ex : 12 rue de la Paix, 75001 Paris" onkeydown="if(event.key==='Enter') searchRelays()">
+        <input type="text" id="search-address" placeholder="Ex : 75001 Paris ou 12 rue de la Paix Paris" onkeydown="if(event.key==='Enter') searchRelays()">
         <button onclick="searchRelays()" id="search-btn">Rechercher</button>
       </div>
-
       <div id="map"></div>
-
-      <div id="relay-list">
-        <div class="list-placeholder">Saisissez votre adresse pour afficher les points relais proches.</div>
-      </div>
-
+      <div id="relay-list"><div class="list-placeholder">Saisissez votre adresse pour afficher les points relais proches.</div></div>
       <div id="selected-relay">
         <div class="relay-name-big" id="relay-name-display"></div>
         <div class="relay-addr-big" id="relay-address-display"></div>
         <div class="relay-id-big" id="relay-id-display"></div>
       </div>
-
       <button class="btn btn-primary" id="btn-valider" onclick="submitForm()" style="margin-top:20px" disabled>✓ Valider ma sélection</button>
       <button class="btn" onclick="backToStep1()" style="background:transparent;color:var(--ink-muted);box-shadow:none;font-weight:400;font-size:0.9rem">← Retour</button>
     </div>
@@ -197,9 +144,7 @@
     <!-- Confirmation -->
     <div class="card" id="success-card">
       <div id="success-screen">
-        <div class="big-check">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
+        <div class="big-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
         <h2>Merci !</h2>
         <p>Votre choix de point relais a bien été enregistré.<br>Vous recevrez votre commande à l'adresse sélectionnée.</p>
         <div style="margin-top:20px;padding:16px;background:var(--bg);border-radius:8px;text-align:left">
@@ -231,23 +176,21 @@
 const STORAGE_KEY = 'neoludis_relais_responses';
 let map, selectedRelayData = null, markers = [], userMarker = null;
 
-// Admin
+const TYPE_LABELS = { 'BUR': '🏣 Bureau de Poste', 'REL': '🏪 Relais Poste', 'APC': '📮 Agence Postale' };
+const TYPE_COLORS = { 'BUR': '#1a5ca8', 'REL': '#E8431A', 'APC': '#1A7A4A' };
+
 if (window.location.search.includes('admin')) {
   document.getElementById('form-section').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
   renderAdminTable();
 }
 
-// Init carte
 function initMap() {
   if (map) return;
   map = L.map('map').setView([46.6, 2.3], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
 }
 
-// Step 1 → 2
 function goToStep2() {
   const prenom = document.getElementById('prenom').value.trim();
   const nom = document.getElementById('nom').value.trim();
@@ -273,145 +216,101 @@ function backToStep1() {
   document.getElementById('step1-card').style.display = 'block';
 }
 
-// Recherche des points relais
 async function searchRelays() {
   const address = document.getElementById('search-address').value.trim();
   if (!address) return;
-
   const btn = document.getElementById('search-btn');
   btn.innerHTML = '<span class="spinner"></span>';
   btn.disabled = true;
   document.getElementById('relay-list').innerHTML = '<div class="list-placeholder"><span class="spinner"></span> Recherche en cours…</div>';
 
   try {
-    // 1. Géocoder l'adresse avec l'API Nominatim (OpenStreetMap)
-    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=fr&limit=1`, {
-      headers: { 'Accept-Language': 'fr' }
-    });
+    // 1. Géocoder l'adresse
+    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=fr&limit=1`, { headers: { 'Accept-Language': 'fr' } });
     const geoData = await geoRes.json();
-
     if (!geoData.length) {
-      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Adresse introuvable. Essayez avec plus de détails.</div>';
-      btn.innerHTML = 'Rechercher'; btn.disabled = false;
-      return;
+      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Adresse introuvable. Essayez avec un code postal ou une ville.</div>';
+      btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
     }
-
     const lat = parseFloat(geoData[0].lat);
     const lon = parseFloat(geoData[0].lon);
 
-    // Centrer la carte
     map.setView([lat, lon], 14);
     if (userMarker) map.removeLayer(userMarker);
     userMarker = L.circleMarker([lat, lon], { radius: 8, color: '#E8431A', fillColor: '#E8431A', fillOpacity: 1 })
       .addTo(map).bindPopup('Votre adresse').openPopup();
 
-    // 2. Chercher les points relais Colissimo via Overpass API (OpenStreetMap)
-    const radius = 3000; // 3km
-    const overpassQuery = `
-      [out:json][timeout:15];
-      (
-        node["amenity"="parcel_locker"]["operator"~"Colissimo|La Poste|Mondial Relay",i](around:${radius},${lat},${lon});
-        node["parcel_pickup"="yes"]["operator"~"Colissimo|La Poste",i](around:${radius},${lat},${lon});
-        node["shop"]["parcel_pickup"="yes"](around:${radius},${lat},${lon});
-        node["amenity"="post_office"](around:${radius},${lat},${lon});
-        node["amenity"="post_depot"](around:${radius},${lat},${lon});
-      );
-      out body;
-    `;
+    // 2. Chercher dans la base dataNOVA La Poste (bureaux + relais officiels)
+    const geoFilter = encodeURIComponent(`distance(coordonnees_gps, geom'POINT(${lon} ${lat})', 5km)`);
+    const url = `https://datanova.laposte.fr/api/explore/v2.1/catalog/datasets/laposte-poincont2/records?where=${geoFilter}&limit=20&order_by=libelle_type_de_site_class+asc`;
+    
+    const res = await fetch(url);
+    const data = await res.json();
 
-    const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: 'data=' + encodeURIComponent(overpassQuery)
-    });
-    const overpassData = await overpassRes.json();
-
-    // Filtrer et trier par distance
-    let relays = overpassData.elements.map(el => {
-      const dist = getDistance(lat, lon, el.lat, el.lon);
-      return {
-        id: el.id.toString(),
-        nom: el.tags.name || el.tags.operator || 'Point Relais',
-        adresse: buildAddress(el.tags),
-        codePostal: el.tags['addr:postcode'] || '',
-        ville: el.tags['addr:city'] || '',
-        lat: el.lat,
-        lon: el.lon,
-        dist: dist,
-        type: el.tags.amenity || el.tags.shop || 'relais',
-      };
-    }).filter(r => r.nom && r.dist < 3000);
-
-    // Dédupliquer par nom+adresse
-    const seen = new Set();
-    relays = relays.filter(r => {
-      const key = r.nom + r.adresse;
-      if (seen.has(key)) return false;
-      seen.add(key); return true;
-    });
-
-    relays.sort((a, b) => a.dist - b.dist);
-    relays = relays.slice(0, 10);
-
-    if (relays.length === 0) {
-      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Aucun point relais trouvé dans un rayon de 3km. Essayez une adresse plus précise.</div>';
-      btn.innerHTML = 'Rechercher'; btn.disabled = false;
-      return;
+    if (!data.results || data.results.length === 0) {
+      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Aucun point relais trouvé dans un rayon de 5km.</div>';
+      btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
     }
 
-    displayRelays(relays, lat, lon);
+    // Transformer et trier par distance
+    let relays = data.results.map(r => {
+      const coords = r.coordonnees_gps;
+      const rlat = coords ? coords.lat : null;
+      const rlon = coords ? coords.lon : null;
+      const dist = (rlat && rlon) ? getDistance(lat, lon, rlat, rlon) : 9999;
+      return {
+        id: r.identifiant_du_site || r.libelle_du_site,
+        nom: r.libelle_du_site || 'Point Relais',
+        adresse: [r.adresse_du_site, r.code_postal_du_site, r.libelle_de_la_commune].filter(Boolean).join(', '),
+        codePostal: r.code_postal_du_site || '',
+        ville: r.libelle_de_la_commune || '',
+        lat: rlat,
+        lon: rlon,
+        dist: dist,
+        type: r.type_de_site || 'REL',
+        typeLabel: TYPE_LABELS[r.type_de_site] || '🏪 Point Relais',
+      };
+    }).filter(r => r.lat && r.lon);
+
+    relays.sort((a, b) => a.dist - b.dist);
+    displayRelays(relays);
 
   } catch(err) {
     document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Erreur lors de la recherche. Réessayez.</div>';
     console.error(err);
   }
-
   btn.innerHTML = 'Rechercher'; btn.disabled = false;
-}
-
-function buildAddress(tags) {
-  const parts = [];
-  if (tags['addr:housenumber'] && tags['addr:street']) parts.push(tags['addr:housenumber'] + ' ' + tags['addr:street']);
-  else if (tags['addr:street']) parts.push(tags['addr:street']);
-  if (tags['addr:postcode']) parts.push(tags['addr:postcode']);
-  if (tags['addr:city']) parts.push(tags['addr:city']);
-  return parts.join(', ') || 'Adresse non renseignée';
 }
 
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function displayRelays(relays, centerLat, centerLon) {
-  // Nettoyer les marqueurs
+function displayRelays(relays) {
   markers.forEach(m => map.removeLayer(m));
   markers = [];
-
-  const icon = L.divIcon({
-    html: '<div style="background:#E8431A;width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>',
-    iconSize: [12, 12], iconAnchor: [6, 6]
-  });
-
+  let html = '';
   relays.forEach((relay, i) => {
-    const marker = L.marker([relay.lat, relay.lon], { icon })
-      .addTo(map)
+    const color = TYPE_COLORS[relay.type] || '#E8431A';
+    const icon = L.divIcon({
+      html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,
+      iconSize: [14,14], iconAnchor: [7,7]
+    });
+    const marker = L.marker([relay.lat, relay.lon], { icon }).addTo(map)
       .bindPopup(`<strong>${relay.nom}</strong><br>${relay.adresse}`);
     marker.on('click', () => selectRelay(relay, i));
     markers.push(marker);
-  });
-
-  // Liste
-  let html = '';
-  relays.forEach((relay, i) => {
-    const distStr = relay.dist < 1000 ? Math.round(relay.dist) + ' m' : (relay.dist/1000).toFixed(1) + ' km';
-    html += `<div class="relay-item" id="relay-item-${i}" onclick="selectRelay(${JSON.stringify(relay).replace(/"/g,'&quot;')}, ${i})">
+    const distStr = relay.dist < 1000 ? Math.round(relay.dist)+'m' : (relay.dist/1000).toFixed(1)+'km';
+    const safeRelay = JSON.stringify(relay).replace(/'/g, "\\'");
+    html += `<div class="relay-item" id="relay-item-${i}" onclick='selectRelay(${JSON.stringify(relay)}, ${i})'>
       <div class="relay-dot"></div>
-      <div class="relay-info">
+      <div style="flex:1">
         <div class="relay-name">${relay.nom}</div>
         <div class="relay-addr">${relay.adresse}</div>
+        <span class="relay-type type-${relay.type}">${relay.typeLabel}</span>
         <div class="relay-dist">📍 ${distStr}</div>
       </div>
     </div>`;
@@ -421,20 +320,13 @@ function displayRelays(relays, centerLat, centerLon) {
 
 function selectRelay(relay, index) {
   selectedRelayData = relay;
-
-  // Mettre à jour la liste
   document.querySelectorAll('.relay-item').forEach(el => el.classList.remove('selected'));
-  const item = document.getElementById('relay-item-' + index);
-  if (item) { item.classList.add('selected'); item.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
-
-  // Centrer la carte
-  map.setView([relay.lat, relay.lon], 15);
-  if (markers[index]) markers[index].openPopup();
-
-  // Afficher le résumé
+  const item = document.getElementById('relay-item-'+index);
+  if (item) { item.classList.add('selected'); item.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+  if (relay.lat && relay.lon) { map.setView([relay.lat, relay.lon], 16); if (markers[index]) markers[index].openPopup(); }
   document.getElementById('relay-name-display').textContent = relay.nom;
   document.getElementById('relay-address-display').textContent = relay.adresse;
-  document.getElementById('relay-id-display').textContent = 'ID : ' + relay.id;
+  document.getElementById('relay-id-display').textContent = 'ID : '+relay.id;
   document.getElementById('selected-relay').style.display = 'block';
   document.getElementById('btn-valider').disabled = false;
 }
@@ -452,8 +344,9 @@ function submitForm() {
     relay_adresse: selectedRelayData.adresse,
     relay_codepostal: selectedRelayData.codePostal,
     relay_ville: selectedRelayData.ville,
+    relay_type: selectedRelayData.typeLabel,
   };
-  const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const existing = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   existing.push(record);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
   document.getElementById('step2-card').style.display = 'none';
@@ -465,13 +358,12 @@ function submitForm() {
   `;
 }
 
-// Admin
 function renderAdminTable() {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   document.getElementById('response-count').textContent = data.length;
   if (!data.length) { document.getElementById('admin-content').innerHTML = '<div class="empty-state">Aucune réponse.</div>'; return; }
-  const cols = ['date','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville'];
-  const labels = ['Date','Prénom','Nom','Email','Tél.','Point Relais','Adresse PR','ID PR','CP','Ville'];
+  const cols = ['date','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
+  const labels = ['Date','Prénom','Nom','Email','Tél.','Point Relais','Adresse','ID','CP','Ville','Type'];
   let html = '<div class="admin-table-wrap"><table><thead><tr>';
   labels.forEach(l => html += `<th>${l}</th>`);
   html += '</tr></thead><tbody>';
@@ -481,23 +373,22 @@ function renderAdminTable() {
 }
 
 function downloadCSV() {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   if (!data.length) { alert('Aucune donnée.'); return; }
-  const cols = ['date','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville'];
-  const labels = ['Date','Prénom','Nom','Email','Téléphone','Point Relais','Adresse PR','ID PR','Code Postal','Ville'];
-  const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-  let csv = '\uFEFF' + labels.map(esc).join(';') + '\n';
-  data.forEach(row => { csv += cols.map(c => esc(row[c])).join(';') + '\n'; });
+  const cols = ['date','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
+  const labels = ['Date','Prénom','Nom','Email','Téléphone','Point Relais','Adresse','ID','Code Postal','Ville','Type'];
+  const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
+  let csv = '\uFEFF'+labels.map(esc).join(';')+'\n';
+  data.forEach(row => { csv += cols.map(c => esc(row[c])).join(';')+'\n'; });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download = `points-relais_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
 }
 
 function clearResponses() {
   if (!confirm('Vider toutes les réponses ?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  renderAdminTable();
+  localStorage.removeItem(STORAGE_KEY); renderAdminTable();
 }
 </script>
 </body>
