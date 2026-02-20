@@ -216,7 +216,7 @@ function backToStep1() {
   btn.innerHTML = 'Choisir mon point relais →';
   btn.disabled = false;
   // Fermer le widget proprement
-  try { frameColissimoClose(); } catch(e) {}
+  // widget fermé automatiquement
 }
 
 async function initWidget() {
@@ -233,15 +233,16 @@ async function initWidget() {
     const token = data.token;
     // Charger le plugin puis ouvrir le widget
     loadColissimoWidget(() => {
-      if (typeof frameColissimoOpen === 'undefined') {
+      if (typeof loadColissimoWidget === 'undefined') {
         document.getElementById('loading-widget').innerHTML = '❌ Widget Colissimo indisponible.';
         return;
       }
       document.getElementById('loading-widget').style.display = 'none';
-      frameColissimoOpen({
+      // La vraie fonction d'initialisation s'appelle loadColissimoWidget côté plugin
+      // mais elle est déjà appelée — on utilise colissimo (jQuery plugin)
+      $('#widget-container').colissimo({
         token: token,
-        enableTarget: 'widget-container',
-        callBackFrame: 'onRelaisSelected',
+        callBack: 'onRelaisSelected',
         codeCountry: 'FR',
         codeLanguage: 'FR',
         weight: '1000',
@@ -256,17 +257,19 @@ async function initWidget() {
 
 // Callback appelé par le widget quand un point est sélectionné
 function onRelaisSelected(point) {
-  if (!point || !point.identifiant) return;
+  console.log('Point relais selectionne:', JSON.stringify(point));
+  if (!point) return;
   selectedRelayData = point;
-
-  document.getElementById('relay-name-display').textContent = point.nom || point.libelle || '';
-  document.getElementById('relay-address-display').textContent = [point.adresse1, point.codePostal, point.localite].filter(Boolean).join(', ');
-  document.getElementById('relay-id-display').textContent = 'ID : ' + point.identifiant;
+  const nom = point.nom || point.libelle || point.raisonSociale || '';
+  const adresse = point.adresse1 || point.adresse || '';
+  const cp = point.codePostal || point.codePostale || '';
+  const ville = point.localite || point.ville || '';
+  const id = point.identifiant || point.code || point.id || '';
+  document.getElementById('relay-name-display').textContent = nom;
+  document.getElementById('relay-address-display').textContent = [adresse, cp, ville].filter(Boolean).join(', ');
+  document.getElementById('relay-id-display').textContent = 'ID : ' + id;
   document.getElementById('selected-relay').style.display = 'block';
   document.getElementById('btn-valider').disabled = false;
-
-  // Fermer le widget
-  try { frameColissimoClose(); } catch(e) {}
 }
 
 function submitForm() {
