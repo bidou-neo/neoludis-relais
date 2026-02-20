@@ -231,21 +231,33 @@ async function initWidget() {
     }
 
     const token = data.token;
-    // Charger le plugin puis ouvrir le widget
+    // Charger le plugin puis initialiser avec widget_colissimo_loadPDR
     loadColissimoWidget(() => {
-      if (typeof loadColissimoWidget === 'undefined') {
+      if (typeof widget_colissimo_loadPDR === 'undefined') {
         document.getElementById('loading-widget').innerHTML = '❌ Widget Colissimo indisponible.';
         return;
       }
       document.getElementById('loading-widget').style.display = 'none';
-      // La vraie fonction d'initialisation s'appelle loadColissimoWidget côté plugin
-      // mais elle est déjà appelée — on utilise colissimo (jQuery plugin)
-      $('#widget-container').colissimo({
+      
+      // Définir le callback global AVANT d'appeler le widget
+      colissimo_widget_callBack = function(point) { onRelaisSelected(point); };
+
+      widget_colissimo_loadPDR({
         token: token,
-        callBack: 'onRelaisSelected',
-        codeCountry: 'FR',
-        codeLanguage: 'FR',
-        weight: '1000',
+        URLColissimo: 'https://ws.colissimo.fr',
+        ceCountry: 'FR',
+        ceZipCode: '',
+        ceTown: '',
+        ceAddress: '',
+        dyWeight: 1000,
+        dyPreparationTime: 0,
+        origin: 'quiet-faun-b6a1db.netlify.app',
+        filterRelay: '',
+        ceLat: '',
+        ceLong: '',
+        callBackSelect: 'onRelaisSelected',
+        callBackClose: '',
+        colissimoContainer: 'widget-container',
       });
     });
 
