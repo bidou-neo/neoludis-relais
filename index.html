@@ -18,7 +18,7 @@
   .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; }
   .logo span { color: var(--accent); }
   header p { font-size: 0.85rem; color: rgba(255,255,255,0.55); font-weight: 300; }
-  main { max-width: 960px; margin: 48px auto; padding: 0 20px; }
+  main { max-width: 1100px; margin: 48px auto; padding: 0 20px; }
   .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 36px; margin-bottom: 24px; border: 1px solid var(--border); }
   h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6rem; margin-bottom: 6px; }
   .subtitle { color: var(--ink-muted); font-size: 0.95rem; margin-bottom: 28px; font-weight: 300; }
@@ -101,6 +101,8 @@
       <div class="form-grid full"><div class="field"><label for="email">Email *</label><input type="email" id="email" placeholder="jean.dupont@email.com"><span class="error-msg" id="err-email">Email invalide</span></div></div>
       <div style="height:14px"></div>
       <div class="form-grid full"><div class="field"><label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="tel" id="telephone" placeholder="06 12 34 56 78"></div></div>
+      <div style="height:14px"></div>
+      <div class="form-grid full"><div class="field"><label for="commande">Numéro de commande <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="text" id="commande" placeholder="Ex : CMD-2024-001"></div></div>
       <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px" id="btn-step2">Choisir mon point relais →</button>
     </div>
 
@@ -272,6 +274,7 @@ function submitForm() {
     relay_codepostal: p.codePostal || '',
     relay_ville: p.localite || '',
     relay_type: p.typeDePoint || '',
+    commande: document.getElementById('commande').value.trim(),
   };
   const existing = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   existing.push(record);
@@ -279,7 +282,7 @@ function submitForm() {
   document.getElementById('step2-card').style.display = 'none';
   document.getElementById('success-card').style.display = 'block';
   document.getElementById('summary-content').innerHTML = `
-    <strong>${record.prenom} ${record.nom}</strong><br>${record.email}<br>
+    ${record.commande ? '<span style='font-size:0.8rem;color:var(--ink-muted)'>Commande : '+record.commande+'</span><br>' : ''}<strong>${record.prenom} ${record.nom}</strong><br>${record.email}<br>
     📦 ${record.relay_nom}<br>
     <span style="color:var(--ink-muted);font-size:0.85rem">${record.relay_adresse}, ${record.relay_codepostal} ${record.relay_ville}</span>
   `;
