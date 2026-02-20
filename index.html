@@ -240,26 +240,41 @@ async function searchRelays() {
     userMarker = L.circleMarker([lat, lon], { radius: 8, color: '#E8431A', fillColor: '#E8431A', fillOpacity: 1 })
       .addTo(map).bindPopup('Votre adresse').openPopup();
 
-    // 2. Chercher dans la base dataNOVA La Poste (bureaux + relais officiels)
-    const geoFilter = encodeURIComponent(`distance(coordonnees_gps, geom'POINT(${lon} ${lat})', 5km)`);
-    const url = `https://datanova.laposte.fr/api/explore/v2.1/catalog/datasets/laposte-poincont2/records?where=${geoFilter}&limit=20&order_by=libelle_type_de_site_class+asc`;
+    // 2. Extraire le code postal depuis les résultats de géocodage
+    const codePostal = geoData[0].display_name.match(/\b\d{5}\b/)?.[0] || '';
     
-    const res = await fetch(url);
-    const data = await res.json();
+    // Chercher dans la base dataNOVA La Poste par code postal + communes voisines
+    // On utilise le filtre géo avec le bon format de l'API v2.1
+    const geoFilter = encodeURIComponent(`geopoint2d:'${lat},${lon}'~5km`);
+    const cpFilter = codePostal ? encodeURIComponent(`code_postal_du_site:"${codePostal}"`) : '';
+    
+    // Essayer d'abord avec filtre géo, sinon par code postal
+    let url = `https://datanova.laposte.fr/api/explore/v2.1/catalog/datasets/laposte-poincont2/records?where=${geoFilter}&limit=20`;
+    
+    let res = await fetch(url);
+    let data = await res.json();
+    
+    // Si l'API géo échoue ou retourne rien, essayer par code postal
+    if ((!data.results || data.results.length === 0) && codePostal) {
+      url = `https://datanova.laposte.fr/api/explore/v2.1/catalog/datasets/laposte-poincont2/records?where=${cpFilter}&limit=20`;
+      res = await fetch(url);
+      data = await res.json();
+    }
 
     if (!data.results || data.results.length === 0) {
-      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Aucun point relais trouvé dans un rayon de 5km.</div>';
+      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Aucun point relais trouvé dans ce secteur.</div>';
       btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
     }
 
     // Transformer et trier par distance
     let relays = data.results.map(r => {
-      const coords = r.coordonnees_gps;
-      const rlat = coords ? coords.lat : null;
-      const rlon = coords ? coords.lon : null;
+      // Le champ geo peut s'appeler différemment selon la version du dataset
+      const coords = r.coordonnees_gps || r.geopoint2d || r.geo_point_2d;
+      const rlat = coords ? (coords.lat || coords.latitude) : null;
+      const rlon = coords ? (coords.lon || coords.longitude) : null;
       const dist = (rlat && rlon) ? getDistance(lat, lon, rlat, rlon) : 9999;
       return {
-        id: r.identifiant_du_site || r.libelle_du_site,
+        id: r.identifiant_du_site || r.code_du_site || r.libelle_du_site,
         nom: r.libelle_du_site || 'Point Relais',
         adresse: [r.adresse_du_site, r.code_postal_du_site, r.libelle_de_la_commune].filter(Boolean).join(', '),
         codePostal: r.code_postal_du_site || '',
