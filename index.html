@@ -293,8 +293,8 @@ function renderAdminTable() {
   const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   document.getElementById('response-count').textContent = data.length;
   if (!data.length) { document.getElementById('admin-content').innerHTML = '<div class="empty-state">Aucune réponse.</div>'; return; }
-  const cols = ['date','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
-  const labels = ['Date','Prénom','Nom','Email','Tél.','Point Relais','Adresse','ID','CP','Ville','Type'];
+  const cols = ['date','commande','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
+  const labels = ['Date','N° Commande','Prénom','Nom','Email','Tél.','Point Relais','Adresse','ID','CP','Ville','Type'];
   let html = '<div class="admin-table-wrap"><table><thead><tr>';
   labels.forEach(l => html += `<th>${l}</th>`);
   html += '</tr></thead><tbody>';
@@ -306,8 +306,8 @@ function renderAdminTable() {
 function downloadCSV() {
   const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   if (!data.length) { alert('Aucune donnée.'); return; }
-  const cols = ['date','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
-  const labels = ['Date','Prénom','Nom','Email','Téléphone','Point Relais','Adresse','ID Colissimo','Code Postal','Ville','Type'];
+  const cols = ['date','commande','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
+  const labels = ['Date','N° Commande','Prénom','Nom','Email','Téléphone','Point Relais','Adresse','ID Colissimo','Code Postal','Ville','Type'];
   const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
   let csv = '\uFEFF'+labels.map(esc).join(';')+'\n';
   data.forEach(row => { csv += cols.map(c => esc(row[c])).join(';')+'\n'; });
