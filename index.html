@@ -210,7 +210,7 @@ function backToStep1() {
 async function initWidget() {
   try {
     // Récupérer le token via la fonction Netlify
-    const res = await fetch('/.netlify/functions/auth-colissimo', { method: 'POST' });
+    const res = await fetch('/api/auth-colissimo', { method: 'POST' });
     const data = await res.json();
 
     if (!data.token) {
