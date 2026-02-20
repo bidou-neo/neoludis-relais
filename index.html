@@ -291,7 +291,7 @@ async function searchRelays() {
     const cp = codePostal;
 
     if (cp) {
-      const url = `https://datanova.laposte.fr/api/records/1.0/search/?dataset=laposte-poincont2&rows=50&refine.code_postal_du_site=${cp}`;
+      const url = `/.netlify/functions/search-relais?cp=${cp}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.records && data.records.length > 0) {
@@ -303,7 +303,7 @@ async function searchRelays() {
     if (relays.length === 0 && geoData.features && geoData.features.length > 0) {
       const cityName = geoData.features[0].properties.city || geoData.features[0].properties.label || '';
       if (cityName) {
-        const url2 = `https://datanova.laposte.fr/api/records/1.0/search/?dataset=laposte-poincont2&rows=50&q=${encodeURIComponent(cityName)}`;
+        const url2 = `/.netlify/functions/search-relais?ville=${encodeURIComponent(cityName)}`;
         const res2 = await fetch(url2);
         const data2 = await res2.json();
         if (data2.records && data2.records.length > 0) {
