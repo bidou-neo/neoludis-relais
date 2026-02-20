@@ -56,7 +56,7 @@
   .relay-item.selected .relay-dot { background: var(--success); }
   .relay-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; }
   .relay-addr { font-size: 0.82rem; color: var(--ink-muted); }
-  .relay-type { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
+  .relay-type-badge { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
   .type-BUR { background: #E3F0FF; color: #1a5ca8; }
   .type-REL { background: #FFF0EC; color: var(--accent); }
   .type-APC { background: #F0FFF4; color: var(--success); }
@@ -103,7 +103,6 @@
 </header>
 <main>
   <div id="form-section">
-    <!-- Étape 1 -->
     <div class="card" id="step1-card">
       <div class="steps-indicator"><div class="step-dot active"></div><div class="step-dot"></div></div>
       <div class="step-badge">① Étape 1 / 2</div>
@@ -120,18 +119,17 @@
       <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px">Choisir mon point relais →</button>
     </div>
 
-    <!-- Étape 2 -->
     <div class="card" id="step2-card" style="display:none">
       <div class="steps-indicator"><div class="step-dot done"></div><div class="step-dot active"></div></div>
       <div class="step-badge">② Étape 2 / 2</div>
       <h1>Votre point relais</h1>
-      <p class="subtitle">Entrez votre code postal ou adresse pour voir les points relais La Poste à proximité.</p>
+      <p class="subtitle">Entrez votre code postal pour voir les points La Poste à proximité.</p>
       <div class="search-row">
-        <input type="text" id="search-address" placeholder="Ex : 75001 Paris ou 12 rue de la Paix Paris" onkeydown="if(event.key==='Enter') searchRelays()">
+        <input type="text" id="search-address" placeholder="Ex : 76520 ou 76520 Franqueville-Saint-Pierre" onkeydown="if(event.key==='Enter') searchRelays()">
         <button onclick="searchRelays()" id="search-btn">Rechercher</button>
       </div>
       <div id="map"></div>
-      <div id="relay-list"><div class="list-placeholder">Saisissez votre adresse pour afficher les points relais proches.</div></div>
+      <div id="relay-list"><div class="list-placeholder">Saisissez votre code postal pour afficher les points relais proches.</div></div>
       <div id="selected-relay">
         <div class="relay-name-big" id="relay-name-display"></div>
         <div class="relay-addr-big" id="relay-address-display"></div>
@@ -141,7 +139,6 @@
       <button class="btn" onclick="backToStep1()" style="background:transparent;color:var(--ink-muted);box-shadow:none;font-weight:400;font-size:0.9rem">← Retour</button>
     </div>
 
-    <!-- Confirmation -->
     <div class="card" id="success-card">
       <div id="success-screen">
         <div class="big-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -155,7 +152,6 @@
     </div>
   </div>
 
-  <!-- Admin -->
   <div id="admin-panel">
     <div class="card" style="padding:0;overflow:hidden">
       <div class="admin-header">
@@ -175,7 +171,6 @@
 <script>
 const STORAGE_KEY = 'neoludis_relais_responses';
 let map, selectedRelayData = null, markers = [], userMarker = null;
-
 const TYPE_LABELS = { 'BUR': '🏣 Bureau de Poste', 'REL': '🏪 Relais Poste', 'APC': '📮 Agence Postale' };
 const TYPE_COLORS = { 'BUR': '#1a5ca8', 'REL': '#E8431A', 'APC': '#1A7A4A' };
 
@@ -216,6 +211,40 @@ function backToStep1() {
   document.getElementById('step1-card').style.display = 'block';
 }
 
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function parseRecords(records, centerLat, centerLon) {
+  return records.map(r => {
+    const f = r.fields || r;
+    // Les coords peuvent être dans geo_point_2d (tableau [lat,lon]) ou coordonnees_gps (objet)
+    let rlat = null, rlon = null;
+    if (f.geo_point_2d) {
+      if (Array.isArray(f.geo_point_2d)) { rlat = f.geo_point_2d[0]; rlon = f.geo_point_2d[1]; }
+      else if (f.geo_point_2d.lat) { rlat = f.geo_point_2d.lat; rlon = f.geo_point_2d.lon; }
+    } else if (f.coordonnees_gps) {
+      if (Array.isArray(f.coordonnees_gps)) { rlat = f.coordonnees_gps[0]; rlon = f.coordonnees_gps[1]; }
+      else { rlat = f.coordonnees_gps.lat; rlon = f.coordonnees_gps.lon; }
+    }
+    const dist = (rlat && rlon) ? getDistance(centerLat, centerLon, rlat, rlon) : 9999;
+    const type = f.type_de_site || f.libelle_type_de_site_class || 'REL';
+    return {
+      id: f.identifiant_du_site || f.code_du_site || f.libelle_du_site || 'N/A',
+      nom: f.libelle_du_site || 'Point Relais',
+      adresse: [f.adresse_du_site, f.code_postal_du_site, f.libelle_de_la_commune].filter(Boolean).join(', '),
+      codePostal: f.code_postal_du_site || '',
+      ville: f.libelle_de_la_commune || '',
+      lat: rlat, lon: rlon, dist,
+      type: type.substring(0, 3).toUpperCase(),
+      typeLabel: TYPE_LABELS[type.substring(0,3).toUpperCase()] || '🏪 Point Relais',
+    };
+  }).filter(r => r.lat && r.lon);
+}
+
 async function searchRelays() {
   const address = document.getElementById('search-address').value.trim();
   if (!address) return;
@@ -225,83 +254,79 @@ async function searchRelays() {
   document.getElementById('relay-list').innerHTML = '<div class="list-placeholder"><span class="spinner"></span> Recherche en cours…</div>';
 
   try {
-    // 1. Géocoder l'adresse
-    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=fr&limit=1`, { headers: { 'Accept-Language': 'fr' } });
+    // Extraire le code postal s'il est présent
+    const cpMatch = address.match(/\b(\d{5})\b/);
+    const codePostal = cpMatch ? cpMatch[1] : '';
+
+    // 1. Géocoder via l'API adresse officielle française
+    let lat, lon;
+    const geoUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1&type=municipality`;
+    const geoRes = await fetch(geoUrl);
     const geoData = await geoRes.json();
-    if (!geoData.length) {
-      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Adresse introuvable. Essayez avec un code postal ou une ville.</div>';
-      btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
+
+    if (geoData.features && geoData.features.length > 0) {
+      lon = geoData.features[0].geometry.coordinates[0];
+      lat = geoData.features[0].geometry.coordinates[1];
+    } else {
+      // Fallback : chercher juste par code postal
+      const geoUrl2 = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(codePostal || address)}&limit=1`;
+      const geoRes2 = await fetch(geoUrl2);
+      const geoData2 = await geoRes2.json();
+      if (geoData2.features && geoData2.features.length > 0) {
+        lon = geoData2.features[0].geometry.coordinates[0];
+        lat = geoData2.features[0].geometry.coordinates[1];
+      } else {
+        document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Adresse introuvable. Essayez avec un code postal.</div>';
+        btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
+      }
     }
-    const lat = parseFloat(geoData[0].lat);
-    const lon = parseFloat(geoData[0].lon);
 
     map.setView([lat, lon], 14);
     if (userMarker) map.removeLayer(userMarker);
     userMarker = L.circleMarker([lat, lon], { radius: 8, color: '#E8431A', fillColor: '#E8431A', fillOpacity: 1 })
       .addTo(map).bindPopup('Votre adresse').openPopup();
 
-    // 2. Extraire le code postal depuis les résultats de géocodage
-    const codePostal = geoData[0].display_name.match(/\b\d{5}\b/)?.[0] || '';
-    
-    // Chercher dans la base dataNOVA La Poste par code postal + communes voisines
-    // On utilise le filtre géo avec le bon format de l'API v2.1
-    const geoFilter = encodeURIComponent(`geopoint2d:'${lat},${lon}'~5km`);
-    const cpFilter = codePostal ? encodeURIComponent(`code_postal_du_site:"${codePostal}"`) : '';
-    
-    // Essayer d'abord avec filtre géo, sinon par code postal
-    let url = `https://datanova.laposte.fr/api/explore/v2.1/catalog/datasets/laposte-poincont2/records?where=${geoFilter}&limit=20`;
-    
-    let res = await fetch(url);
-    let data = await res.json();
-    
-    // Si l'API géo échoue ou retourne rien, essayer par code postal
-    if ((!data.results || data.results.length === 0) && codePostal) {
-      url = `https://datanova.laposte.fr/api/explore/v2.1/catalog/datasets/laposte-poincont2/records?where=${cpFilter}&limit=20`;
-      res = await fetch(url);
-      data = await res.json();
+    // 2. Rechercher dans dataNOVA par code postal (API v1 - plus simple et stable)
+    let relays = [];
+    const cp = codePostal;
+
+    if (cp) {
+      const url = `https://datanova.laposte.fr/api/records/1.0/search/?dataset=laposte-poincont2&rows=50&refine.code_postal_du_site=${cp}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.records && data.records.length > 0) {
+        relays = parseRecords(data.records, lat, lon);
+      }
     }
 
-    if (!data.results || data.results.length === 0) {
-      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Aucun point relais trouvé dans ce secteur.</div>';
+    // Si rien ou pas de code postal, chercher les codes postaux adjacents via l'API commune
+    if (relays.length === 0 && geoData.features && geoData.features.length > 0) {
+      const cityName = geoData.features[0].properties.city || geoData.features[0].properties.label || '';
+      if (cityName) {
+        const url2 = `https://datanova.laposte.fr/api/records/1.0/search/?dataset=laposte-poincont2&rows=50&q=${encodeURIComponent(cityName)}`;
+        const res2 = await fetch(url2);
+        const data2 = await res2.json();
+        if (data2.records && data2.records.length > 0) {
+          relays = parseRecords(data2.records, lat, lon);
+        }
+      }
+    }
+
+    // Trier par distance et prendre les 15 plus proches dans un rayon de 10km
+    relays = relays.filter(r => r.dist < 10000).sort((a,b) => a.dist - b.dist).slice(0, 15);
+
+    if (relays.length === 0) {
+      document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Aucun point relais La Poste trouvé. Essayez un code postal voisin.</div>';
       btn.innerHTML = 'Rechercher'; btn.disabled = false; return;
     }
 
-    // Transformer et trier par distance
-    let relays = data.results.map(r => {
-      // Le champ geo peut s'appeler différemment selon la version du dataset
-      const coords = r.coordonnees_gps || r.geopoint2d || r.geo_point_2d;
-      const rlat = coords ? (coords.lat || coords.latitude) : null;
-      const rlon = coords ? (coords.lon || coords.longitude) : null;
-      const dist = (rlat && rlon) ? getDistance(lat, lon, rlat, rlon) : 9999;
-      return {
-        id: r.identifiant_du_site || r.code_du_site || r.libelle_du_site,
-        nom: r.libelle_du_site || 'Point Relais',
-        adresse: [r.adresse_du_site, r.code_postal_du_site, r.libelle_de_la_commune].filter(Boolean).join(', '),
-        codePostal: r.code_postal_du_site || '',
-        ville: r.libelle_de_la_commune || '',
-        lat: rlat,
-        lon: rlon,
-        dist: dist,
-        type: r.type_de_site || 'REL',
-        typeLabel: TYPE_LABELS[r.type_de_site] || '🏪 Point Relais',
-      };
-    }).filter(r => r.lat && r.lon);
-
-    relays.sort((a, b) => a.dist - b.dist);
     displayRelays(relays);
 
   } catch(err) {
-    document.getElementById('relay-list').innerHTML = '<div class="list-placeholder">Erreur lors de la recherche. Réessayez.</div>';
-    console.error(err);
+    console.error('Erreur recherche:', err);
+    document.getElementById('relay-list').innerHTML = `<div class="list-placeholder">Erreur : ${err.message}. Réessayez.</div>`;
   }
   btn.innerHTML = 'Rechercher'; btn.disabled = false;
-}
-
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 function displayRelays(relays) {
@@ -319,13 +344,12 @@ function displayRelays(relays) {
     marker.on('click', () => selectRelay(relay, i));
     markers.push(marker);
     const distStr = relay.dist < 1000 ? Math.round(relay.dist)+'m' : (relay.dist/1000).toFixed(1)+'km';
-    const safeRelay = JSON.stringify(relay).replace(/'/g, "\\'");
-    html += `<div class="relay-item" id="relay-item-${i}" onclick='selectRelay(${JSON.stringify(relay)}, ${i})'>
+    html += `<div class="relay-item" id="relay-item-${i}" onclick='selectRelay(${JSON.stringify(relay).replace(/'/g,"&#39;")}, ${i})'>
       <div class="relay-dot"></div>
       <div style="flex:1">
         <div class="relay-name">${relay.nom}</div>
         <div class="relay-addr">${relay.adresse}</div>
-        <span class="relay-type type-${relay.type}">${relay.typeLabel}</span>
+        <span class="relay-type-badge type-${relay.type}">${relay.typeLabel}</span>
         <div class="relay-dist">📍 ${distStr}</div>
       </div>
     </div>`;
