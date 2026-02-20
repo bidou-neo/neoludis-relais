@@ -220,27 +220,22 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 function parseRecords(records, centerLat, centerLon) {
   return records.map(r => {
-    const f = r.fields || r;
-    // Les coords peuvent être dans geo_point_2d (tableau [lat,lon]) ou coordonnees_gps (objet)
-    let rlat = null, rlon = null;
-    if (f.geo_point_2d) {
-      if (Array.isArray(f.geo_point_2d)) { rlat = f.geo_point_2d[0]; rlon = f.geo_point_2d[1]; }
-      else if (f.geo_point_2d.lat) { rlat = f.geo_point_2d.lat; rlon = f.geo_point_2d.lon; }
-    } else if (f.coordonnees_gps) {
-      if (Array.isArray(f.coordonnees_gps)) { rlat = f.coordonnees_gps[0]; rlon = f.coordonnees_gps[1]; }
-      else { rlat = f.coordonnees_gps.lat; rlon = f.coordonnees_gps.lon; }
-    }
+    const rlat = r.latitude || null;
+    const rlon = r.longitude || null;
     const dist = (rlat && rlon) ? getDistance(centerLat, centerLon, rlat, rlon) : 9999;
-    const type = f.type_de_site || f.libelle_type_de_site_class || 'REL';
+    const carac = r.caracteristique_du_site || '';
+    let type = 'REL';
+    if (carac.includes('Bureau')) type = 'BUR';
+    else if (carac.includes('Agence')) type = 'APC';
     return {
-      id: f.identifiant_du_site || f.code_du_site || f.libelle_du_site || 'N/A',
-      nom: f.libelle_du_site || 'Point Relais',
-      adresse: [f.adresse_du_site, f.code_postal_du_site, f.libelle_de_la_commune].filter(Boolean).join(', '),
-      codePostal: f.code_postal_du_site || '',
-      ville: f.libelle_de_la_commune || '',
+      id: r.identifiant_a || r.libelle_du_site || 'N/A',
+      nom: r.libelle_du_site || 'Point Relais',
+      adresse: [r.adresse, r.code_postal, r.localite].filter(Boolean).join(', '),
+      codePostal: r.code_postal || '',
+      ville: r.localite || '',
       lat: rlat, lon: rlon, dist,
-      type: type.substring(0, 3).toUpperCase(),
-      typeLabel: TYPE_LABELS[type.substring(0,3).toUpperCase()] || '🏪 Point Relais',
+      type: type,
+      typeLabel: TYPE_LABELS[type] || '🏪 Point Relais',
     };
   }).filter(r => r.lat && r.lon);
 }
@@ -291,23 +286,26 @@ async function searchRelays() {
     const cp = codePostal;
 
     if (cp) {
-      const url = `/.netlify/functions/search-relais?cp=${cp}`;
-      const res = await fetch(url);
+      // Appel direct à dataNOVA (pas besoin de proxy, CORS OK)
+      const url = `https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-poincont2/lines?size=50&qs=code_postal:${cp}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       const data = await res.json();
-      if (data.records && data.records.length > 0) {
-        relays = parseRecords(data.records, lat, lon);
+      if (data.results && data.results.length > 0) {
+        relays = parseRecords(data.results, lat, lon);
       }
     }
 
-    // Si rien ou pas de code postal, chercher les codes postaux adjacents via l'API commune
-    if (relays.length === 0 && geoData.features && geoData.features.length > 0) {
-      const cityName = geoData.features[0].properties.city || geoData.features[0].properties.label || '';
-      if (cityName) {
-        const url2 = `/.netlify/functions/search-relais?ville=${encodeURIComponent(cityName)}`;
-        const res2 = await fetch(url2);
+    // Si rien ou pas de CP, chercher par localité
+    if (relays.length === 0) {
+      const cityName = geoData.features && geoData.features.length > 0
+        ? (geoData.features[0].properties.city || '')
+        : address.replace(/\d{5}\s*/g, '').trim();
+      if (cityName.length > 2) {
+        const url2 = `https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-poincont2/lines?size=50&qs=localite:${encodeURIComponent(cityName.toUpperCase())}`;
+        const res2 = await fetch(url2, { headers: { 'Accept': 'application/json' } });
         const data2 = await res2.json();
-        if (data2.records && data2.records.length > 0) {
-          relays = parseRecords(data2.records, lat, lon);
+        if (data2.results && data2.results.length > 0) {
+          relays = parseRecords(data2.results, lat, lon);
         }
       }
     }
