@@ -271,6 +271,8 @@ function submitForm() {
   const p = selectedRelayData;
   const record = {
     date: new Date().toLocaleString('fr-FR'),
+    editeur: 'Neoludis',
+    commande: document.getElementById('commande').value.trim(),
     prenom: document.getElementById('prenom').value.trim(),
     nom: document.getElementById('nom').value.trim(),
     email: document.getElementById('email').value.trim(),
@@ -281,11 +283,17 @@ function submitForm() {
     relay_codepostal: p.codePostal || '',
     relay_ville: p.localite || '',
     relay_type: p.typeDePoint || '',
-    commande: document.getElementById('commande').value.trim(),
   };
+  // Sauvegarder en local ET envoyer vers Google Sheets
   const existing = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   existing.push(record);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+  // Envoi vers Google Sheets (sans bloquer l'interface)
+  fetch('/api/save-response', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(record)
+  }).catch(err => console.error('Sheets error:', err));
   document.getElementById('step2-card').style.display = 'none';
   document.getElementById('success-card').style.display = 'block';
   document.getElementById('summary-content').innerHTML = `
