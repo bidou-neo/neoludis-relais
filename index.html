@@ -271,7 +271,7 @@ function submitForm() {
   const p = selectedRelayData;
   const record = {
     date: new Date().toLocaleString('fr-FR'),
-    editeur: 'Neoludis',
+    editeur: new URLSearchParams(window.location.search).get('editeur') || 'Inconnu',
     commande: document.getElementById('commande').value.trim(),
     prenom: document.getElementById('prenom').value.trim(),
     nom: document.getElementById('nom').value.trim(),
