@@ -254,6 +254,8 @@ function retourChoix() {
   document.getElementById('btn-step2').textContent = 'Choisir mon point relais →';
   document.getElementById('btn-step2').disabled = false;
 }
+
+function choisirLivraison(mode) {
   modeLivraison = mode;
   document.getElementById('step0-card').style.display = 'none';
   document.getElementById('step1-card').style.display = 'block';
