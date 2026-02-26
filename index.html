@@ -130,8 +130,8 @@
         </button>
       </div>
       <div class="steps-indicator"><div class="step-dot active"></div><div class="step-dot"></div></div>
-      <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection de point relais Colissimo</p>
-      <div class="step-badge">① Étape 1 / 2</div>
+      <p id="titre-page" style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection de point relais Colissimo</p>
+      <div class="step-badge" id="badge-etape">① Étape 1 / 2</div>
       <h1>Vos coordonnées</h1>
       <p class="subtitle">Ces informations nous permettront d'imprimer votre étiquette de livraison.</p>
       <div class="form-grid">
@@ -262,13 +262,19 @@ function choisirLivraison(mode) {
 
   const adresseFields = document.getElementById('adresse-fields');
   const btnStep2 = document.getElementById('btn-step2');
+  const titrePage = document.getElementById('titre-page');
+  const badgeEtape = document.getElementById('badge-etape');
 
   if (mode === 'domicile') {
     adresseFields.style.display = 'block';
     btnStep2.textContent = 'Valider mon adresse →';
+    titrePage.textContent = 'Livraison à domicile';
+    badgeEtape.style.display = 'none';
   } else {
     adresseFields.style.display = 'none';
     btnStep2.textContent = 'Choisir mon point relais →';
+    titrePage.textContent = 'Sélection de point relais Colissimo';
+    badgeEtape.style.display = 'inline-flex';
   }
 }
 
