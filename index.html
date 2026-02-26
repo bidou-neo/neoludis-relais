@@ -692,7 +692,10 @@ function genererLiens() {
 
   const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
   const baseUrl = window.location.origin + '/?editeur=' + encodeURIComponent(editeur);
-  const choix   = new URLSearchParams(window.location.search).get('choix') === '1' ? '&choix=1' : '';
+  // Récupérer choix depuis la config éditeur
+  const configEditeurs = { 'dentrobat': true }; // même liste que CONFIG ci-dessus
+  const avecChoix = configEditeurs[editeur] || new URLSearchParams(window.location.search).get('choix') === '1';
+  const choix = avecChoix ? '&choix=1' : '';
 
   window._liensGeneres = importData.map(row => {
     const ref    = row[colRef]    || '';
@@ -765,10 +768,11 @@ function downloadLiens() {
     // fond   : couleur de fond du header
     // filtre : filtre CSS appliqué au logo (invert pour logos noirs sur fond sombre)
     const CONFIG = {
-      'neoludis':    { fond: '#1a1a1a', filtre: 'none' },
-      'D_ART':       { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)' },
-      'Antre_monde': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)' },
-      'Tiki':        { fond: '#ffffff', filtre: 'none' },
+      'neoludis':    { fond: '#1a1a1a', filtre: 'none',                       choix: false },
+      'D_ART':       { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Antre_monde': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Tiki':        { fond: '#ffffff', filtre: 'none',                       choix: false },
+      'dentrobat':   { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: true  },
       // Ajouter ici les prochains éditeurs
     };
 
