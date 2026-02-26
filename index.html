@@ -207,17 +207,81 @@
 
   <!-- Admin -->
   <div id="admin-panel">
-    <div class="card" style="padding:0;overflow:hidden">
-      <div class="admin-header">
-        <span>📋 Réponses <span class="badge-count" id="response-count">0</span></span>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="downloadCSV()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV</button>
-          <button onclick="clearResponses()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'Syne',sans-serif">🗑 Vider</button>
+
+    <!-- Onglets -->
+    <div style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--border)">
+      <button id="tab-reponses" onclick="switchTab('reponses')" style="padding:10px 22px;border:none;background:var(--accent);color:white;font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;">📋 Réponses</button>
+      <button id="tab-import" onclick="switchTab('import')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">📥 Import CSV</button>
+    </div>
+
+    <!-- Onglet Réponses -->
+    <div id="panel-reponses">
+      <div class="card" style="padding:0;overflow:hidden;border-radius:0 var(--radius) var(--radius) var(--radius)">
+        <div class="admin-header">
+          <span>📋 Réponses <span class="badge-count" id="response-count">0</span></span>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="downloadCSV()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV</button>
+            <button onclick="clearResponses()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'Syne',sans-serif">🗑 Vider</button>
+          </div>
+        </div>
+        <div id="admin-content"><div class="empty-state">Aucune réponse.</div></div>
+      </div>
+      <p style="text-align:center;font-size:0.8rem;color:var(--ink-muted);margin-top:12px">Téléchargez le CSV régulièrement.</p>
+    </div>
+
+    <!-- Onglet Import CSV -->
+    <div id="panel-import" style="display:none">
+      <div class="card">
+        <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Génération de liens personnalisés</p>
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin-bottom:8px">Importer un fichier commandes</h2>
+        <p class="subtitle">Importez le CSV de l'éditeur pour générer les liens personnalisés à envoyer aux clients.</p>
+
+        <div style="margin:24px 0">
+          <label style="display:block;font-size:0.82rem;font-weight:500;color:var(--ink-muted);margin-bottom:8px;letter-spacing:0.02em;text-transform:uppercase">Fichier CSV commandes</label>
+          <input type="file" id="import-csv-file" accept=".csv,.txt" style="width:100%;padding:12px;border:2px dashed var(--border);border-radius:8px;background:var(--bg);cursor:pointer;font-family:'DM Sans',sans-serif">
+        </div>
+
+        <!-- Mapping colonnes (affiché après chargement) -->
+        <div id="import-mapping" style="display:none">
+          <div class="form-grid" style="margin-bottom:16px">
+            <div class="field">
+              <label>Colonne Référence / Backer ID</label>
+              <select id="col-ref" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Email</label>
+              <select id="col-email" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Prénom <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+              <select id="col-prenom" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Nom <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+              <select id="col-nom" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+              <select id="col-tel" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+          </div>
+          <div id="import-status" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
+          <button class="btn btn-primary" onclick="genererLiens()" style="margin-top:8px">Générer les liens →</button>
+        </div>
+
+        <!-- Résultat -->
+        <div id="import-result" style="display:none;margin-top:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-weight:600" id="import-count"></span>
+            <button class="btn btn-primary" onclick="downloadLiens()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ Télécharger CSV liens</button>
+          </div>
+          <div class="admin-table-wrap" style="max-height:400px">
+            <table id="import-table"></table>
+          </div>
         </div>
       </div>
-      <div id="admin-content"><div class="empty-state">Aucune réponse.</div></div>
     </div>
-    <p style="text-align:center;font-size:0.8rem;color:var(--ink-muted);margin-top:12px">Téléchargez le CSV régulièrement.</p>
+
   </div>
 </main>
 
@@ -278,15 +342,37 @@ function choisirLivraison(mode) {
   }
 }
 
+// ─── CONFIG MOTS DE PASSE ADMIN PAR ÉDITEUR ───────────────────────
+const ADMIN_PASSWORDS = {
+  '':            'Neoludis2024!',   // admin global (toutes les réponses)
+  'dentrobat':   'Dentrobat2024!',
+  'D_ART':       'DART2024!',
+  'Antre_monde': 'AntreMonde2024!',
+  'Tiki':        'Tiki2024!',
+  'neoludis':    'Neoludis2024!',
+  // Ajouter les prochains éditeurs ici
+};
+
+let adminEditeur = ''; // éditeur courant pour filtrer les réponses
+
 if (window.location.search.includes('admin')) {
-  const pwd = prompt('Mot de passe admin :');
-  if (pwd === 'Neoludis2024!') {
-    document.getElementById('form-section').style.display = 'none';
-    document.getElementById('admin-panel').style.display = 'block';
-    renderAdminTable();
-  } else {
-    alert('Mot de passe incorrect.');
+  const editeurParam = new URLSearchParams(window.location.search).get('editeur') || '';
+  const pwdAttendu = ADMIN_PASSWORDS[editeurParam];
+
+  if (!pwdAttendu) {
+    alert('Éditeur inconnu ou accès non autorisé.');
     window.location.href = '/';
+  } else {
+    const pwd = prompt(`Mot de passe admin${editeurParam ? ' (' + editeurParam + ')' : ''} :`);
+    if (pwd === pwdAttendu) {
+      adminEditeur = editeurParam;
+      document.getElementById('form-section').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+      renderAdminTable();
+    } else {
+      alert('Mot de passe incorrect.');
+      window.location.href = '/';
+    }
   }
 }
 
@@ -464,12 +550,54 @@ function submitForm() {
     '<strong>' + record.prenom + ' ' + record.nom + '</strong><br>' + record.email + '<br>' + livraisonHtml;
 }
 
+// Pré-remplissage via API si ?ref= dans l'URL
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const ref     = p.get('ref');
+  const editeur = p.get('editeur') || '';
+  if (!ref) return;
+
+  // Mettre la ref en lecture seule immédiatement
+  const cmdEl = document.getElementById('commande');
+  if (cmdEl) {
+    cmdEl.value    = ref;
+    cmdEl.readOnly = true;
+    cmdEl.style.background = '#f0f0f0';
+    cmdEl.style.color      = 'var(--ink-muted)';
+  }
+
+  // Récupérer les infos backer depuis le Sheet
+  fetch(`/api/get-backer?editeur=${encodeURIComponent(editeur)}&ref=${encodeURIComponent(ref)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.trouve) return;
+      if (data.email     && document.getElementById('email'))     document.getElementById('email').value     = data.email;
+      if (data.prenom    && document.getElementById('prenom'))    document.getElementById('prenom').value    = data.prenom;
+      if (data.nom       && document.getElementById('nom'))       document.getElementById('nom').value       = data.nom;
+      if (data.telephone && document.getElementById('telephone')) document.getElementById('telephone').value = data.telephone;
+    })
+    .catch(() => {}); // Non bloquant
+})();
+function switchTab(tab) {
+  document.getElementById('panel-reponses').style.display = tab === 'reponses' ? 'block' : 'none';
+  document.getElementById('panel-import').style.display   = tab === 'import'   ? 'block' : 'none';
+  document.getElementById('tab-reponses').style.background = tab === 'reponses' ? 'var(--accent)' : 'var(--bg)';
+  document.getElementById('tab-reponses').style.color      = tab === 'reponses' ? 'white' : 'var(--ink-muted)';
+  document.getElementById('tab-import').style.background   = tab === 'import'   ? 'var(--accent)' : 'var(--bg)';
+  document.getElementById('tab-import').style.color        = tab === 'import'   ? 'white' : 'var(--ink-muted)';
+}
+
+// ─── ONGLET RÉPONSES ────────────────────────────────────────────
 function renderAdminTable() {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  // Filtrer par éditeur si admin non global
+  if (adminEditeur) {
+    data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
+  }
   document.getElementById('response-count').textContent = data.length;
   if (!data.length) { document.getElementById('admin-content').innerHTML = '<div class="empty-state">Aucune réponse.</div>'; return; }
-  const cols = ['date','commande','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
-  const labels = ['Date','N° Commande','Prénom','Nom','Email','Tél.','Point Relais','Adresse','ID','CP','Ville','Type'];
+  const cols   = ['date','commande','prenom','nom','email','telephone','mode_livraison','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville'];
+  const labels = ['Date','Réf.','Prénom','Nom','Email','Tél.','Mode','Point/Adresse','Adresse','ID Relais','CP','Ville'];
   let html = '<div class="admin-table-wrap"><table><thead><tr>';
   labels.forEach(l => html += `<th>${l}</th>`);
   html += '</tr></thead><tbody>';
@@ -479,22 +607,151 @@ function renderAdminTable() {
 }
 
 function downloadCSV() {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  if (adminEditeur) data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
   if (!data.length) { alert('Aucune donnée.'); return; }
-  const cols = ['date','commande','prenom','nom','email','telephone','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
-  const labels = ['Date','N° Commande','Prénom','Nom','Email','Téléphone','Point Relais','Adresse','ID Colissimo','Code Postal','Ville','Type'];
+  const cols   = ['date','editeur','commande','prenom','nom','email','telephone','mode_livraison','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
+  const labels = ['Date','Éditeur','Réf. Commande','Prénom','Nom','Email','Téléphone','Mode livraison','Point Relais/Domicile','Adresse','ID Colissimo','Code Postal','Ville','Type'];
   const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
   let csv = '\uFEFF'+labels.map(esc).join(';')+'\n';
   data.forEach(row => { csv += cols.map(c => esc(row[c])).join(';')+'\n'; });
+  const suffix = adminEditeur ? '_'+adminEditeur : '_tous';
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download = `points-relais_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `points-relais${suffix}_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
 }
 
 function clearResponses() {
   if (!confirm('Vider toutes les réponses ?')) return;
   localStorage.removeItem(STORAGE_KEY); renderAdminTable();
+}
+
+// ─── ONGLET IMPORT CSV ──────────────────────────────────────────
+let importData = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('import-csv-file');
+  if (fileInput) fileInput.addEventListener('change', chargerCSV);
+});
+
+function chargerCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const text = ev.target.result;
+    // Détecter séparateur ; ou ,
+    const sep = text.indexOf(';') !== -1 ? ';' : ',';
+    const lines = text.trim().split(/\r?\n/);
+    const headers = lines[0].split(sep).map(h => h.replace(/^"|"$/g,'').trim());
+    importData = lines.slice(1).map(line => {
+      const vals = line.split(sep).map(v => v.replace(/^"|"$/g,'').trim());
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = vals[i]||'');
+      return obj;
+    }).filter(row => Object.values(row).some(v => v));
+
+    // Remplir les selects de mapping
+    const selects = ['col-ref','col-email','col-prenom','col-nom','col-tel'];
+    const defaults = {
+      'col-ref':    ['backer_id','BackerID','Backer ID','ref','commande','id'],
+      'col-email':  ['email','Email','e-mail'],
+      'col-prenom': ['prenom','prénom','Prénom','PrénomNom','firstname','first_name'],
+      'col-nom':    ['nom','Nom','lastname','last_name'],
+      'col-tel':    ['telephone','téléphone','tel','phone','mobile'],
+    };
+    selects.forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '<option value="">— Aucune —</option>';
+      headers.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h; opt.textContent = h;
+        // Pré-sélectionner si le nom correspond
+        if (defaults[id] && defaults[id].some(d => h.toLowerCase().includes(d.toLowerCase()))) {
+          opt.selected = true;
+        }
+        sel.appendChild(opt);
+      });
+    });
+
+    document.getElementById('import-mapping').style.display = 'block';
+    document.getElementById('import-result').style.display = 'none';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function genererLiens() {
+  const colRef    = document.getElementById('col-ref').value;
+  const colEmail  = document.getElementById('col-email').value;
+  const colPrenom = document.getElementById('col-prenom').value;
+  const colNom    = document.getElementById('col-nom').value;
+  const colTel    = document.getElementById('col-tel') ? document.getElementById('col-tel').value : '';
+
+  if (!colRef) { alert('Veuillez sélectionner la colonne Référence / Backer ID'); return; }
+
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  const baseUrl = window.location.origin + '/?editeur=' + encodeURIComponent(editeur);
+  const choix   = new URLSearchParams(window.location.search).get('choix') === '1' ? '&choix=1' : '';
+
+  window._liensGeneres = importData.map(row => {
+    const ref    = row[colRef]    || '';
+    const email  = row[colEmail]  || '';
+    const prenom = row[colPrenom] || '';
+    const nom    = row[colNom]    || '';
+    const tel    = colTel ? (row[colTel] || '') : '';
+    const url    = baseUrl + choix + '&ref=' + encodeURIComponent(ref);
+    return { ref, prenom, nom, email, telephone: tel, lien: url };
+  });
+
+  // Stocker les backers dans le Sheet pour le pré-remplissage
+  const btn = event.target;
+  btn.innerHTML = '<span class="spinner"></span> Import en cours…';
+  btn.disabled = true;
+
+  fetch('/api/import-backers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ editeur, backers: window._liensGeneres }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    const msg = data.importes > 0
+      ? `✅ ${data.importes} backer(s) importé(s)${data.ignores ? ', ' + data.ignores + ' déjà présent(s)' : ''}`
+      : `ℹ️ ${data.message || 'Import terminé'}`;
+    btn.innerHTML = 'Générer les liens →';
+    btn.disabled = false;
+    document.getElementById('import-status').textContent = msg;
+    document.getElementById('import-status').style.display = 'block';
+  })
+  .catch(() => {
+    btn.innerHTML = 'Générer les liens →';
+    btn.disabled = false;
+  });
+
+  // Afficher le tableau de liens
+  document.getElementById('import-count').textContent = `${window._liensGeneres.length} liens générés`;
+  let html = '<thead><tr><th>Réf.</th><th>Prénom</th><th>Nom</th><th>Email</th><th>Lien</th></tr></thead><tbody>';
+  window._liensGeneres.forEach(r => {
+    html += `<tr><td>${r.ref}</td><td>${r.prenom}</td><td>${r.nom}</td><td>${r.email}</td><td><a href="${r.lien}" target="_blank" style="font-size:0.8rem;word-break:break-all">${r.lien}</a></td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('import-table').innerHTML = html;
+  document.getElementById('import-result').style.display = 'block';
+}
+
+function downloadLiens() {
+  if (!window._liensGeneres || !window._liensGeneres.length) return;
+  const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
+  let csv = '\uFEFFPrénom;Nom;Email;Lien\n';
+  window._liensGeneres.forEach(r => {
+    csv += [r.prenom, r.nom, r.email, r.lien].map(esc).join(';') + '\n';
+  });
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || 'export';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `liens_${editeur}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
 }
 </script>
 
