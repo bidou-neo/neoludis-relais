@@ -124,6 +124,11 @@
 
     <!-- Étape 1 -->
     <div class="card" id="step1-card">
+      <div id="btn-retour-choix" style="display:none;margin-bottom:16px">
+        <button onclick="retourChoix()" style="background:none;border:none;cursor:pointer;color:var(--ink-muted);font-size:0.88rem;padding:0;display:flex;align-items:center;gap:6px;">
+          ← Modifier mon choix de livraison
+        </button>
+      </div>
       <div class="steps-indicator"><div class="step-dot active"></div><div class="step-dot"></div></div>
       <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection de point relais Colissimo</p>
       <div class="step-badge">① Étape 1 / 2</div>
@@ -235,7 +240,20 @@ if (_params.get('choix') === '1') {
   document.getElementById('step1-card').style.display = 'none';
 }
 
-function choisirLivraison(mode) {
+// Afficher le bouton retour si ?choix=1
+if (_params.get('choix') === '1') {
+  document.getElementById('btn-retour-choix').style.display = 'block';
+}
+
+function retourChoix() {
+  modeLivraison = 'relais';
+  document.getElementById('step1-card').style.display = 'none';
+  document.getElementById('step0-card').style.display = 'block';
+  // Réinitialiser les champs adresse
+  document.getElementById('adresse-fields').style.display = 'none';
+  document.getElementById('btn-step2').textContent = 'Choisir mon point relais →';
+  document.getElementById('btn-step2').disabled = false;
+}
   modeLivraison = mode;
   document.getElementById('step0-card').style.display = 'none';
   document.getElementById('step1-card').style.display = 'block';
