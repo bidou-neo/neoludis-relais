@@ -138,7 +138,7 @@
       <div style="height:14px"></div>
       <div class="form-grid full"><div class="field"><label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="tel" id="telephone" placeholder="06 12 34 56 78"></div></div>
       <div style="height:14px"></div>
-      <div class="form-grid full"><div class="field"><label for="commande">Numéro de commande <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="text" id="commande" placeholder="Ex : CMD-2024-001"></div></div>
+      <div class="form-grid full"><div class="field"><label for="commande">Numéro de commande *</label><input type="text" id="commande" placeholder="Ex : CMD-2024-001"><span class="error-msg" id="err-commande">Champ requis</span></div></div>
 
       <!-- Champs adresse (affichés uniquement si livraison domicile) -->
       <div id="adresse-fields" style="display:none">
@@ -185,6 +185,19 @@
         </div>
       </div>
     </div>
+
+    <!-- Commande déjà enregistrée -->
+    <div class="card" id="already-registered-card" style="display:none">
+      <div style="text-align:center;padding:16px 0">
+        <div style="width:72px;height:72px;background:#FFF3CD;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:2px solid #FFD97D;font-size:2rem">⚠️</div>
+        <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:12px;color:var(--ink)">Choix déjà enregistré</h2>
+        <p style="color:var(--ink-muted);font-size:0.95rem;line-height:1.7;max-width:420px;margin:0 auto">
+          Un choix de livraison a déjà été enregistré pour cette commande.<br><br>
+          Pour toute modification, veuillez contacter <strong id="already-editeur"></strong>.
+        </p>
+      </div>
+    </div>
+
   </div>
 
   <!-- Admin -->
@@ -255,7 +268,9 @@ function goToStep2() {
   const prenom = document.getElementById('prenom').value.trim();
   const nom = document.getElementById('nom').value.trim();
   const email = document.getElementById('email').value.trim();
+  const commande = document.getElementById('commande').value.trim();
   let valid = true;
+
   [['prenom', prenom], ['nom', nom]].forEach(([id, val]) => {
     const el = document.getElementById(id), err = document.getElementById('err-'+id);
     if (!val) { el.classList.add('error'); err.style.display = 'block'; valid = false; }
@@ -265,6 +280,11 @@ function goToStep2() {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     emailEl.classList.add('error'); emailErr.style.display = 'block'; valid = false;
   } else { emailEl.classList.remove('error'); emailErr.style.display = 'none'; }
+
+  // Numéro de commande obligatoire
+  const cmdEl = document.getElementById('commande'), cmdErr = document.getElementById('err-commande');
+  if (!commande) { cmdEl.classList.add('error'); cmdErr.style.display = 'block'; valid = false; }
+  else { cmdEl.classList.remove('error'); cmdErr.style.display = 'none'; }
 
   // Validation champs adresse si mode domicile
   if (modeLivraison === 'domicile') {
@@ -277,20 +297,47 @@ function goToStep2() {
 
   if (!valid) return;
 
-  // Mode domicile : soumettre directement sans widget
-  if (modeLivraison === 'domicile') {
-    submitForm();
-    return;
-  }
-
+  // Vérifier si la commande a déjà été enregistrée
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
   const btn = document.getElementById('btn-step2');
-  btn.innerHTML = '<span class="spinner"></span> Chargement…';
+  btn.innerHTML = '<span class="spinner"></span> Vérification…';
   btn.disabled = true;
 
-  document.getElementById('step1-card').style.display = 'none';
-  document.getElementById('step2-card').style.display = 'block';
-  initWidget();
+  fetch(`/api/check-order?editeur=${encodeURIComponent(editeur)}&commande=${encodeURIComponent(commande)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.existe) {
+        // Commande déjà enregistrée → page bloquante
+        btn.innerHTML = 'Choisir mon point relais →';
+        btn.disabled = false;
+        document.getElementById('step1-card').style.display = 'none';
+        document.getElementById('already-registered-card').style.display = 'block';
+        document.getElementById('already-editeur').textContent = editeur || 'votre revendeur';
+      } else {
+        // Commande nouvelle → continuer
+        if (modeLivraison === 'domicile') {
+          btn.innerHTML = 'Valider mon adresse →';
+          btn.disabled = false;
+          submitForm();
+          return;
+        }
+        btn.innerHTML = '<span class="spinner"></span> Chargement…';
+        document.getElementById('step1-card').style.display = 'none';
+        document.getElementById('step2-card').style.display = 'block';
+        initWidget();
+      }
+    })
+    .catch(() => {
+      // En cas d'erreur API, on laisse passer (pas bloquant)
+      btn.innerHTML = 'Choisir mon point relais →';
+      btn.disabled = false;
+      if (modeLivraison === 'domicile') { submitForm(); return; }
+      document.getElementById('step1-card').style.display = 'none';
+      document.getElementById('step2-card').style.display = 'block';
+      initWidget();
+    });
 }
+
 
 function backToStep1() {
   document.getElementById('step2-card').style.display = 'none';
