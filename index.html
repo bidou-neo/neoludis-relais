@@ -102,6 +102,7 @@
     <!-- Étape 0 : Choix mode livraison (optionnel, activé avec ?choix=1) -->
     <div class="card" id="step0-card">
       <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection du mode de livraison</p>
+      <div id="welcome-msg" style="display:none;font-size:1.1rem;color:var(--ink-muted);margin-bottom:8px;font-weight:300"></div>
       <h1>Comment souhaitez-vous être livré ?</h1>
       <p class="subtitle">Choisissez votre mode de livraison préféré.</p>
       <div class="choix-livraison">
@@ -620,7 +621,11 @@ function submitForm() {
     .then(r => r.json())
     .then(data => {
       if (!data.trouve) return;
-      if (data.email     && document.getElementById('email'))     document.getElementById('email').value     = data.email;
+      if (data.prenom) {
+      const welcome = document.getElementById('welcome-msg');
+      if (welcome) { welcome.textContent = `Bonjour ${data.prenom} 👋`; welcome.style.display = 'block'; }
+    }
+    if (data.email     && document.getElementById('email'))     document.getElementById('email').value     = data.email;
       if (data.prenom    && document.getElementById('prenom'))    document.getElementById('prenom').value    = data.prenom;
       if (data.nom       && document.getElementById('nom'))       document.getElementById('nom').value       = data.nom;
       if (data.telephone && document.getElementById('telephone')) document.getElementById('telephone').value = data.telephone;
