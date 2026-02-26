@@ -45,6 +45,9 @@ export default async function handler(req, res) {
     }
 
     // Écrire dans le Google Sheet
+    // Préfixe ' sur les champs numériques pour forcer le format texte dans Sheets
+    const tel = body.telephone ? `'${body.telephone}` : '';
+    const cp  = body.relay_codepostal ? `'${body.relay_codepostal}` : '';
     const row = [
       body.date || new Date().toLocaleString('fr-FR'),
       body.editeur || '',
@@ -52,11 +55,11 @@ export default async function handler(req, res) {
       body.prenom || '',
       body.nom || '',
       body.email || '',
-      body.telephone || '',
+      tel,
       body.relay_id || '',
       body.relay_nom || '',
       body.relay_adresse || '',
-      body.relay_codepostal || '',
+      cp,
       body.relay_ville || '',
       body.relay_type || '',
     ];
