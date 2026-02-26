@@ -82,7 +82,7 @@
 <body>
 <header>
   <div>
-    <div class="logo">Neo<span>ludis</span></div>
+    <div class="logo" id="logo-container">Neo<span>ludis</span></div>
     <p>Sélection de point relais Colissimo</p>
   </div>
 </header>
@@ -336,5 +336,34 @@ function clearResponses() {
   localStorage.removeItem(STORAGE_KEY); renderAdminTable();
 }
 </script>
+
+  <script>
+  // Chargement dynamique du logo éditeur
+  (function() {
+    const editeur = new URLSearchParams(window.location.search).get('editeur');
+    if (!editeur) return;
+    const container = document.getElementById('logo-container');
+    if (!container) return;
+
+    // Essayer SVG puis PNG
+    const extensions = ['svg', 'png', 'jpg'];
+    let idx = 0;
+
+    function tryNext() {
+      if (idx >= extensions.length) return; // aucun logo trouvé, on garde Neoludis
+      const ext = extensions[idx++];
+      const img = new Image();
+      img.onload = function() {
+        container.innerHTML = '';
+        img.alt = editeur;
+        img.style.cssText = 'max-height:48px; max-width:200px; object-fit:contain;';
+        container.appendChild(img);
+      };
+      img.onerror = tryNext;
+      img.src = `/logos/${editeur}.${ext}`;
+    }
+    tryNext();
+  })();
+  </script>
 </body>
 </html>
