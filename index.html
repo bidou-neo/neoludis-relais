@@ -356,7 +356,7 @@ function clearResponses() {
       img.onload = function() {
         container.innerHTML = '';
         img.alt = editeur;
-        img.style.cssText = 'max-height:48px; max-width:200px; object-fit:contain;';
+        img.style.cssText = 'max-height:70px; max-width:240px; object-fit:contain; filter: brightness(0) invert(1);';
         container.appendChild(img);
       };
       img.onerror = tryNext;
