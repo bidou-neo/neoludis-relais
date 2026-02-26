@@ -338,32 +338,46 @@ function clearResponses() {
 </script>
 
   <script>
-  // Chargement dynamique du logo éditeur
   (function() {
     const editeur = new URLSearchParams(window.location.search).get('editeur');
-    if (!editeur) { document.getElementById('logo-container').style.visibility = 'visible'; return; }
     const container = document.getElementById('logo-container');
     if (!container) return;
-    // Toujours afficher le container (avec logo éditeur ou texte Neoludis)
+
+    // ── Config par éditeur ──────────────────────────────────────────
+    // fond   : couleur de fond du header
+    // filtre : filtre CSS appliqué au logo (invert pour logos noirs sur fond sombre)
+    const CONFIG = {
+      'neoludis':    { fond: '#1a1a1a', filtre: 'none' },
+      'D_ART':       { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)' },
+      'Antre_monde': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)' },
+      'Tiki':        { fond: '#ffffff', filtre: 'none' },
+      // Ajouter ici les prochains éditeurs
+    };
+
+    const cfg = CONFIG[editeur] || { fond: '#1a1a1a', filtre: 'none' };
+
+    // Appliquer le fond du header
+    const header = document.querySelector('header');
+    if (header) header.style.backgroundColor = cfg.fond;
+
+    // Sans éditeur : afficher le logo Neoludis par défaut
+    if (!editeur) { container.style.visibility = 'visible'; return; }
+
+    // Vider immédiatement le texte pour éviter tout flash
+    container.innerHTML = '';
     container.style.visibility = 'visible';
 
-    // Essayer SVG puis PNG
+    // Essayer SVG → PNG → JPG
     const extensions = ['svg', 'png', 'jpg'];
     let idx = 0;
-
-    // Vider immédiatement le texte Neoludis pour éviter tout flash
-    container.innerHTML = '';
     function tryNext() {
-      if (idx >= extensions.length) return; // aucun logo trouvé, on garde Neoludis
+      if (idx >= extensions.length) return;
       const ext = extensions[idx++];
       const img = new Image();
       img.onload = function() {
         container.innerHTML = '';
         img.alt = editeur;
-        // Logos sombres qui nécessitent une inversion pour être visibles sur fond noir
-        const logosAInverser = ['D_ART', 'Antre_monde'];
-        const filtre = logosAInverser.includes(editeur) ? 'brightness(0) invert(1)' : 'none';
-        img.style.cssText = `max-height:70px; max-width:240px; object-fit:contain; filter:${filtre};`;
+        img.style.cssText = `max-height:80px; max-width:260px; object-fit:contain; filter:${cfg.filtre};`;
         container.appendChild(img);
       };
       img.onerror = tryNext;
