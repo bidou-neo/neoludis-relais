@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
     // ── Déposer sur Dropbox ─────────────────────────────────────────
     const filename = `Demandes_Envois_${editeurLabel}_${date}.csv`;
-    const dropboxPath = `/Neoludis/Exports/${filename}`;
+    const dropboxPath = `/Preparation de commandes/BtoC/Script/import CSV app/${filename}`;
 
     const uploadRes = await fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
