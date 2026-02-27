@@ -77,10 +77,12 @@ export default async function handler(req, res) {
 
     if (!uploadRes.ok) {
       const err = await uploadRes.text();
+      console.error('Dropbox upload error:', err);
       return res.status(500).json({ error: 'Erreur upload Dropbox', detail: err });
     }
 
     const uploadData = await uploadRes.json();
+    console.log('Upload OK:', JSON.stringify(uploadData));
 
     // ── Lien de partage ─────────────────────────────────────────────
     let shareLink = '';
