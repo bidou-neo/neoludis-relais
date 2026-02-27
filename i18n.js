@@ -166,6 +166,27 @@ const TRANSLATIONS = {
     email_relance_subject: 'Rappel : choisissez votre mode de livraison - {editeur}',
     email_relance_body: 'Bonjour {prenom},\n\nNous n\'avons pas encore reçu votre choix de livraison.\nVotre commande est prête à partir — il ne vous reste plus qu\'à indiquer comment vous souhaitez la recevoir :\n\n{lien}\n\nN\'hésitez pas à nous contacter si vous avez la moindre question.\n\nCordialement,\nL\'équipe {editeur} / Neoludis',
 
+    // ── Strings manquantes ────────────────────────────────────────────
+    no_responses: 'Aucune réponse.',
+    reponses_hint: 'Téléchargez le CSV régulièrement.',
+    mail_variables: 'Variables disponibles',
+    import_section_title: 'Génération de liens personnalisés',
+    import_subtitle: "Importez le CSV de l'éditeur pour générer les liens personnalisés à envoyer aux clients.",
+    import_file_label: 'Fichier CSV commandes',
+    import_btn: 'Générer les liens →',
+    suivi_empty: 'Cliquez sur Actualiser pour charger les données.',
+    col_telephone: 'Tél.',
+    col_livraison: 'Mode',
+    col_relay_point: 'Point/Adresse',
+    col_nom: 'Nom',
+    step1_coords: 'Vos coordonnées',
+    step1_coords_desc: 'Ces informations nous permettront d\'imprimer votre étiquette de livraison.',
+    label_commande: 'Numéro de commande *',
+    placeholder_commande: 'Ex : CMD-2024-001',
+    confirm_recap: 'Récapitulatif',
+    already_contact: 'Pour toute modification, veuillez contacter',
+    btn_back: '← Retour',
+
     // ── Lang switcher ─────────────────────────────────────────────────
     lang_fr: 'FR',
     lang_en: 'EN',
@@ -335,6 +356,27 @@ const TRANSLATIONS = {
     email_relance_subject: 'Reminder: choose your delivery method - {editeur}',
     email_relance_body: 'Hello {prenom},\n\nWe have not yet received your delivery choice.\nYour order is ready to go — you just need to let us know how you\'d like to receive it:\n\n{lien}\n\nFeel free to contact us if you have any questions.\n\nBest regards,\nThe {editeur} / Neoludis team',
 
+    // ── Strings manquantes ────────────────────────────────────────────
+    no_responses: 'No responses.',
+    reponses_hint: 'Download the CSV regularly.',
+    mail_variables: 'Available variables',
+    import_section_title: 'Personalized link generation',
+    import_subtitle: "Import the publisher's CSV to generate personalized links to send to customers.",
+    import_file_label: 'Orders CSV file',
+    import_btn: 'Generate links →',
+    suivi_empty: 'Click Refresh to load data.',
+    col_telephone: 'Phone',
+    col_livraison: 'Mode',
+    col_relay_point: 'Point/Address',
+    col_nom: 'Last name',
+    step1_coords: 'Your details',
+    step1_coords_desc: 'This information will allow us to print your shipping label.',
+    label_commande: 'Order number *',
+    placeholder_commande: 'Ex: CMD-2024-001',
+    confirm_recap: 'Summary',
+    already_contact: 'For any changes, please contact',
+    btn_back: '← Back',
+
     // ── Lang switcher ─────────────────────────────────────────────────
     lang_fr: 'FR',
     lang_en: 'EN',
@@ -350,6 +392,16 @@ function setLang(lang) {
   localStorage.setItem('neoludis_lang', lang);
   document.documentElement.lang = lang;
   applyTranslations();
+  // Recharger le contenu dynamique si nécessaire
+  if (typeof chargerSuivi === 'function' && document.getElementById('panel-suivi') && document.getElementById('panel-suivi').style.display !== 'none') {
+    chargerSuivi();
+  }
+  if (typeof initMailTemplates === 'function' && document.getElementById('panel-mail') && document.getElementById('panel-mail').style.display !== 'none') {
+    initMailTemplates();
+  }
+  if (typeof renderAdminTable === 'function' && document.getElementById('panel-reponses') && document.getElementById('panel-reponses').style.display !== 'none') {
+    renderAdminTable();
+  }
 }
 
 function t(key) {
