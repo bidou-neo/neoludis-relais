@@ -276,10 +276,32 @@
             <span style="font-weight:600" id="import-count"></span>
             <div style="display:flex;gap:10px">
               <button class="btn btn-primary" onclick="downloadLiens()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV liens</button>
-              <button onclick="envoyerEmails()" id="btn-send-emails" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0;background:#1a1a1a;color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;">✉ Envoyer les emails</button>
             </div>
           </div>
-          <div id="send-status" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
+          <!-- Éditeur de template email -->
+          <div id="email-template-editor" style="display:none;margin-top:24px;padding-top:24px;border-top:1px solid var(--border)">
+            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">✉ Template email</p>
+            <p style="font-size:0.82rem;color:var(--ink-muted);margin-bottom:16px;">Variables disponibles : <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{prenom}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{editeur}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{lien}</code></p>
+            <div class="field" style="margin-bottom:12px">
+              <label>Objet</label>
+              <input type="text" id="email-subject" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box">
+            </div>
+            <div class="field" style="margin-bottom:16px">
+              <label>Corps du message</label>
+              <textarea id="email-body" rows="8" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box;resize:vertical;line-height:1.6"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button onclick="aperçuEmail()" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer">👁 Aperçu</button>
+              <button onclick="envoyerEmails()" id="btn-send-emails" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0;background:#1a1a1a;color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;">✉ Envoyer les emails</button>
+            </div>
+            <!-- Aperçu -->
+            <div id="email-preview" style="display:none;margin-top:16px;padding:16px;border:1.5px solid var(--border);border-radius:8px;background:white">
+              <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:12px">Aperçu (premier backer)</p>
+              <div style="font-size:0.88rem;color:var(--ink-muted);margin-bottom:4px">Objet : <strong id="preview-subject" style="color:var(--ink)"></strong></div>
+              <div style="margin-top:12px;white-space:pre-wrap;font-size:0.92rem;line-height:1.6" id="preview-body"></div>
+            </div>
+          </div>
+          <div id="send-status" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
           <div class="admin-table-wrap" style="max-height:400px">
             <table id="import-table"></table>
           </div>
@@ -799,12 +821,43 @@ function genererLiens() {
   html += '</tbody>';
   document.getElementById('import-table').innerHTML = html;
   document.getElementById('import-result').style.display = 'block';
+
+  // Initialiser le template email avec les valeurs par défaut
+  const editeurLabel = editeur || 'Neoludis';
+  const subjectEl = document.getElementById('email-subject');
+  const bodyEl    = document.getElementById('email-body');
+  if (subjectEl && !subjectEl.value) {
+    subjectEl.value = `Choisissez votre mode de livraison - ${editeurLabel}`;
+  }
+  if (bodyEl && !bodyEl.value) {
+    bodyEl.value = `Bonjour {prenom},\n\nVotre commande est prête à être expédiée.\nCliquez sur le lien ci-dessous pour choisir votre mode de livraison :\n\n{lien}\n\nCordialement,\nL'équipe {editeur} / Neoludis`;
+  }
+  document.getElementById('email-template-editor').style.display = 'block';
+}
+
+function aperçuEmail() {
+  if (!window._liensGeneres || !window._liensGeneres.length) return;
+  const backer  = window._liensGeneres.find(b => b.email) || window._liensGeneres[0];
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || 'Neoludis';
+  const subject = document.getElementById('email-subject').value;
+  const body    = document.getElementById('email-body').value;
+
+  const replace = str => str
+    .replace(/{prenom}/g,  backer.prenom || 'Prénom')
+    .replace(/{editeur}/g, editeur)
+    .replace(/{lien}/g,    backer.lien);
+
+  document.getElementById('preview-subject').textContent = replace(subject);
+  document.getElementById('preview-body').textContent    = replace(body);
+  document.getElementById('email-preview').style.display = 'block';
 }
 
 async function envoyerEmails() {
   if (!window._liensGeneres || !window._liensGeneres.length) return;
 
   const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  const subject = document.getElementById('email-subject').value;
+  const body    = document.getElementById('email-body').value;
   const nb = window._liensGeneres.filter(b => b.email).length;
 
   if (!confirm(`Envoyer ${nb} email(s) aux backers de ${editeur} ?`)) return;
@@ -820,7 +873,7 @@ async function envoyerEmails() {
     const r = await fetch('/api/send-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ editeur, backers: window._liensGeneres }),
+      body: JSON.stringify({ editeur, backers: window._liensGeneres, subject, body }),
     });
     const data = await r.json();
 
