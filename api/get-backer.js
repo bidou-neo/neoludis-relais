@@ -1,6 +1,6 @@
 // api/get-backer.js
 // Récupère les infos d'un backer depuis l'onglet "Backers" du Sheet
-// GET ?editeur=dentrobat&ref=1370971
+// GET ?editeur=dendrobat&ref=1370971
 
 import { getAccessToken } from './_google-auth.js';
 
