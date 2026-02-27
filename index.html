@@ -269,10 +269,12 @@
         <div class="admin-header">
           <span>📋 Réponses <span class="badge-count" id="response-count">0</span></span>
           <div style="display:flex;gap:10px">
-            <button class="btn btn-primary" onclick="downloadCSV()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV</button>
+            <button class="btn btn-primary" onclick="downloadCSV()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV local</button>
+            <button class="btn" onclick="exporterDropbox()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0;background:#0061FF;color:white;box-shadow:none">📦 Envoyer à la logistique</button>
             <button onclick="clearResponses()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'Syne',sans-serif">🗑 Vider</button>
           </div>
         </div>
+        <div id="dropbox-status" style="display:none;padding:10px 20px;font-size:0.88rem;border-top:1px solid rgba(255,255,255,0.1)"></div>
         <div id="admin-content"><div class="empty-state">Aucune réponse.</div></div>
       </div>
       <p style="text-align:center;font-size:0.8rem;color:var(--ink-muted);margin-top:12px">Téléchargez le CSV régulièrement.</p>
@@ -790,7 +792,7 @@ function renderAdminTable() {
   document.getElementById('admin-content').innerHTML = html;
 }
 
-function downloadCSV() {
+async function downloadCSV() {
   let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   if (adminEditeur) data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
   if (!data.length) { alert('Aucune donnée.'); return; }
@@ -842,11 +844,76 @@ function downloadCSV() {
     csv += line.map(esc).join(';') + '\n';
   });
 
-  const suffix = adminEditeur ? '_'+adminEditeur : '_tous';
+  const dateStr = new Date().toISOString().split('T')[0];
+  const filename = `Demandes_Envois_${editeurLabel}_${dateStr}.csv`;
+
+  // 1. Téléchargement local
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download = `Demandes_Envois_${editeurLabel}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = filename;
   a.click();
+
+  // 2. Dépôt sur Dropbox
+  const csvBtn = document.querySelector('.admin-header .btn-primary');
+  const originalText = csvBtn?.innerHTML;
+  if (csvBtn) { csvBtn.innerHTML = '⏳ Dropbox…'; csvBtn.disabled = true; }
+
+  try {
+    const r = await fetch('/api/export-dropbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editeur: editeurLabel, csv, filename }),
+    });
+    const result = await r.json();
+    if (result.success) {
+      if (csvBtn) { csvBtn.innerHTML = '✅ Dropbox OK'; csvBtn.disabled = false; }
+      setTimeout(() => { if (csvBtn) csvBtn.innerHTML = originalText; }, 3000);
+    } else {
+      if (csvBtn) { csvBtn.innerHTML = '⚠️ Dropbox KO'; csvBtn.disabled = false; }
+      setTimeout(() => { if (csvBtn) csvBtn.innerHTML = originalText; }, 3000);
+      console.error('Dropbox error:', result.error);
+    }
+  } catch (err) {
+    if (csvBtn) { csvBtn.innerHTML = '⚠️ Dropbox KO'; csvBtn.disabled = false; }
+    setTimeout(() => { if (csvBtn) csvBtn.innerHTML = originalText; }, 3000);
+    console.error('Dropbox error:', err);
+  }
+}
+
+async function exporterDropbox() {
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  if (adminEditeur) data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
+  if (!data.length) { alert('Aucune donnée à exporter.'); return; }
+
+  const nb = data.length;
+  if (!confirm(`Envoyer ${nb} commande(s) à la logistique via Dropbox ?`)) return;
+
+  const statusEl = document.getElementById('dropbox-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'rgba(255,255,255,0.8)';
+  statusEl.textContent = '⏳ Dépôt en cours sur Dropbox…';
+
+  try {
+    const r = await fetch('/api/export-dropbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editeur: adminEditeur || 'Neoludis', rows: data }),
+    });
+    const result = await r.json();
+
+    if (result.success) {
+      statusEl.style.color = '#A8E6C5';
+      statusEl.innerHTML = `✅ ${result.nb} commande(s) déposée(s) sur Dropbox — <strong>${result.filename}</strong>${result.lien ? ' — <a href="' + result.lien + '" target="_blank" style="color:#A8E6C5">Télécharger</a>' : ''}`;
+      // Marquer les lignes comme "en cours de traitement" dans le Sheet
+      // (à implémenter avec update-status.js)
+    } else {
+      statusEl.style.color = '#FFB3B3';
+      statusEl.textContent = '❌ Erreur : ' + (result.error || 'Inconnue');
+    }
+  } catch (err) {
+    statusEl.style.color = '#FFB3B3';
+    statusEl.textContent = '❌ Erreur : ' + err.message;
+  }
 }
 
 function clearResponses() {
