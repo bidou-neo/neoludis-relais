@@ -26,11 +26,30 @@ export default async function handler(req, res) {
     }
 
     const prenom = backer.prenom || 'cher client';
+    // Détecter l'extension du logo disponible
+    const baseLogoUrl = 'https://neoludis-relais.vercel.app/logos/';
+    const extensions = ['gif', 'png', 'jpg', 'svg'];
+    let logoUrl = '';
+    for (const ext of extensions) {
+      const testUrl = `${baseLogoUrl}${editeur}.${ext}`;
+      try {
+        const testRes = await fetch(testUrl, { method: 'HEAD' });
+        if (testRes.ok) { logoUrl = testUrl; break; }
+      } catch {}
+    }
+
+    const logoHtml = logoUrl
+      ? `<div style="text-align:center;margin-bottom:32px;padding:20px;background-color:#1a1a1a;border-radius:8px;">
+           <img src="${logoUrl}" alt="${editeur}" style="max-height:80px;max-width:260px;object-fit:contain;">
+         </div>`
+      : '';
+
     const html = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  ${logoHtml}
   <p style="font-size: 16px;">Bonjour ${prenom},</p>
   <p style="font-size: 15px; line-height: 1.6;">
     Votre commande est prête à être expédiée.<br>
