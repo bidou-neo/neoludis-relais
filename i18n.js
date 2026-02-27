@@ -397,7 +397,7 @@ function setLang(lang) {
     chargerSuivi();
   }
   if (typeof initMailTemplates === 'function' && document.getElementById('panel-mail') && document.getElementById('panel-mail').style.display !== 'none') {
-    initMailTemplates();
+    initMailTemplates(true);
   }
   if (typeof renderAdminTable === 'function' && document.getElementById('panel-reponses') && document.getElementById('panel-reponses').style.display !== 'none') {
     renderAdminTable();
