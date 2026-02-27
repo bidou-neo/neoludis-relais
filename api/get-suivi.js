@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     // 2. Récupérer les réponses (onglet principal - feuille 1)
     // Colonnes : A=Date | B=Éditeur | C=Commande(=ref) | D=Prénom | E=Nom...
     const reponsesRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A:C`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Feuille%201!A:C`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const reponsesData = await reponsesRes.json();
