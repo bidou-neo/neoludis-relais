@@ -39,34 +39,10 @@ export default async function handler(req, res) {
     }
 
     const logoHtml = logoUrl
-      ? `<div style="text-align:center;margin-bottom:32px;padding:20px;background-color:#1a1a1a;border-radius:8px;">
-           <img src="${logoUrl}" alt="${editeur}" style="max-height:80px;max-width:260px;object-fit:contain;">
-         </div>`
+      ? `<div style="text-align:center;margin-bottom:24px;padding:16px;background-color:#1a1a1a;border-radius:8px"><img src="${logoUrl}" alt="${editeur}" style="max-height:80px;max-width:260px"></div>`
       : '';
 
-    const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-  ${logoHtml}
-  <p style="font-size: 16px;">Bonjour ${prenom},</p>
-  <p style="font-size: 15px; line-height: 1.6;">
-    Votre commande est prête à être expédiée.<br>
-    Cliquez sur le lien ci-dessous pour choisir votre mode de livraison :
-  </p>
-  <div style="text-align: center; margin: 32px 0;">
-    <a href="${backer.lien}"
-       style="background-color: #E8431A; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: bold;">
-      Choisir ma livraison →
-    </a>
-  </div>
-  <p style="font-size: 13px; color: #888; margin-top: 32px;">
-    Cordialement,<br>
-    L'équipe ${editeur} / Neoludis
-  </p>
-</body>
-</html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#333">${logoHtml}<p style="font-size:16px">Bonjour ${prenom},</p><p style="font-size:15px;line-height:1.6">Votre commande est prête à être expédiée.<br>Cliquez sur le lien ci-dessous pour choisir votre mode de livraison :</p><div style="text-align:center;margin:32px 0"><a href="${backer.lien}" style="background-color:#E8431A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold">Choisir ma livraison →</a></div><p style="font-size:13px;color:#888;margin-top:32px">Cordialement,<br>L'équipe ${editeur} / Neoludis</p></body></html>`;
 
     try {
       const r = await fetch('https://api.resend.com/emails', {
