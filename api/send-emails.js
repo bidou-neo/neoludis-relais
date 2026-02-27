@@ -1,87 +1,906 @@
-// api/send-emails.js
-// Envoie un email personnalisé à chaque backer avec son lien
-// POST { editeur, backers: [{ref, prenom, nom, email, lien}] }
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL     = 'expedition@neoludis.com';
-
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')   return res.status(405).json({ error: 'Méthode non autorisée' });
-
-  const { editeur, backers, subject: customSubject, body: customBody } = req.body;
-  if (!editeur || !backers?.length) {
-    return res.status(400).json({ error: 'Paramètres manquants' });
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choisir mon point relais — Neoludis</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F2EC; --surface: #fff; --ink: #1A1A1A; --ink-muted: #6B6B6B;
+    --accent: #E8431A; --accent-light: #FFF0EC; --border: #E0DDD6;
+    --success: #1A7A4A; --success-light: #EDFAF3; --radius: 12px;
+    --shadow: 0 2px 20px rgba(0,0,0,0.07);
   }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+  header { background: var(--ink); color: white; padding: 18px 32px; display: flex; align-items: center; justify-content: flex-start; gap: 16px; }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; }
+  .logo span { color: var(--accent); }
+  main { max-width: 1200px; margin: 48px auto; padding: 0 12px; }
+  .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 36px; margin-bottom: 24px; border: 1px solid var(--border); }
+  #step2-card { padding: 36px 16px; }
+  h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6rem; margin-bottom: 6px; }
+  .subtitle { color: var(--ink-muted); font-size: 0.95rem; margin-bottom: 28px; font-weight: 300; }
+  .step-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-light); color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 12px; border-radius: 100px; margin-bottom: 16px; }
+  .steps-indicator { display: flex; gap: 8px; margin-bottom: 28px; }
+  .step-dot { height: 4px; flex: 1; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+  .step-dot.active { background: var(--accent); }
+  .step-dot.done { background: var(--success); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; }
+  label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--ink-muted); margin-bottom: 6px; letter-spacing: 0.02em; text-transform: uppercase; }
+  input[type="text"], input[type="email"], input[type="tel"] { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; background: var(--bg); color: var(--ink); transition: border-color 0.2s; outline: none; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,67,26,0.1); background: white; }
+  input::placeholder { color: #BBBAB4; }
+  input.error { border-color: var(--accent); }
+  .error-msg { color: var(--accent); font-size: 0.82rem; margin-top: 4px; display: none; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.95rem; cursor: pointer; border: none; transition: transform 0.15s, box-shadow 0.15s; width: 100%; margin-top: 8px; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px rgba(232,67,26,0.25); }
+  .btn-primary:hover { box-shadow: 0 6px 20px rgba(232,67,26,0.35); }
+  .btn-primary:disabled { background: #D0CEC9; box-shadow: none; cursor: not-allowed; }
+  .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  // Template par défaut si non fourni
-  const subjectTemplate = customSubject || `Choisissez votre mode de livraison - ${editeur}`;
-  const bodyTemplate    = customBody    || `Bonjour {prenom},\n\nVotre commande est prête à être expédiée.\nCliquez sur le lien ci-dessous pour choisir votre mode de livraison :\n\n{lien}\n\nCordialement,\nL'équipe {editeur} / Neoludis`;
-
-  const replace = (str, backer) => str
-    .replace(/{prenom}/g,  backer.prenom || 'cher client')
-    .replace(/{editeur}/g, editeur)
-    .replace(/{lien}/g,    backer.lien || '');
-
-  const resultats = [];
-
-  for (const backer of backers) {
-    if (!backer.email) {
-      resultats.push({ ref: backer.ref, statut: 'ignoré', raison: 'pas d\'email' });
-      continue;
-    }
-
-    const prenom = backer.prenom || 'cher client';
-    const sujet  = replace(subjectTemplate, backer);
-    const corps  = replace(bodyTemplate, backer);
-
-    // Convertir le corps texte en HTML (remplacer les sauts de ligne, et le lien en bouton)
-    const corpsHtml = corps
-      .replace(/\n/g, '<br>')
-      .replace(
-        backer.lien,
-        `<div style="text-align:center;margin:24px 0"><a href="${backer.lien}" style="background-color:#E8431A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold">Choisir ma livraison →</a></div>`
-      );
-
-    // Logo éditeur — URL directe sans détection dynamique
-    const logoUrl = `https://neoludis-relais.vercel.app/logos/${editeur}.gif`;
-    const logoHtml = `<div style="text-align:center;margin-bottom:24px;padding:16px;background-color:#1a1a1a;border-radius:8px"><img src="${logoUrl}" alt="${editeur}" style="max-height:80px;max-width:260px"></div>`;
-
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#333">${logoHtml}${corpsHtml}</body></html>`;
-
-    try {
-      const r = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: `${editeur} <${FROM_EMAIL}>`,
-          to:   [backer.email],
-          subject: sujet,
-          html,
-        }),
-      });
-      const data = await r.json();
-      if (data.id) {
-        resultats.push({ ref: backer.ref, email: backer.email, statut: 'envoyé' });
-      } else {
-        resultats.push({ ref: backer.ref, email: backer.email, statut: 'erreur', raison: data.message || JSON.stringify(data) });
-      }
-    } catch (err) {
-      resultats.push({ ref: backer.ref, email: backer.email, statut: 'erreur', raison: err.message });
-    }
-
-    // Petite pause pour ne pas dépasser les limites de l'API
-    await new Promise(r => setTimeout(r, 100));
+  /* Étape 0 - Choix livraison */
+  #step0-card { display: none; }
+  .choix-livraison { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+  .choix-btn { display: flex; align-items: center; gap: 20px; padding: 24px 28px; border-radius: 12px; border: 2px solid var(--border); background: white; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%; }
+  .choix-btn:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(232,67,26,0.12); transform: translateY(-1px); }
+  .choix-btn.principal { border-color: var(--accent); background: rgba(232,67,26,0.03); }
+  .choix-btn.principal:hover { background: rgba(232,67,26,0.07); }
+  .choix-icon { font-size: 2rem; flex-shrink: 0; }
+  .choix-text h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; color: var(--ink); }
+  .choix-text p { font-size: 0.88rem; color: var(--ink-muted); font-weight: 300; margin: 0; }
+  .choix-btn.secondaire { opacity: 0.75; }
+  .choix-btn.secondaire .choix-text h3 { font-size: 0.95rem; }
+  /* Widget Colissimo */
+  #widget-container { min-height: 500px; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  #loading-widget { display: flex; align-items: center; justify-content: center; min-height: 400px; color: var(--ink-muted); font-size: 0.9rem; gap: 10px; }
+  .spinner-dark { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  /* Point sélectionné */
+  #selected-relay { display: none; background: var(--success-light); border: 1.5px solid #A8E6C5; border-radius: 10px; padding: 16px 18px; margin-top: 16px; }
+  .relay-name-big { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--success); margin-bottom: 4px; }
+  .relay-addr-big { font-size: 0.85rem; color: var(--ink-muted); }
+  .relay-id-big { font-size: 0.78rem; color: var(--success); margin-top: 6px; font-weight: 500; }
+  /* Succès */
+  #success-card { display: none; }
+  .big-check { width: 72px; height: 72px; background: var(--success-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 2px solid #A8E6C5; }
+  #success-screen { text-align: center; }
+  #success-screen h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.4rem; margin-bottom: 8px; color: var(--success); }
+  #success-screen p { color: var(--ink-muted); font-size: 0.95rem; line-height: 1.6; }
+  /* Admin */
+  #admin-panel { display: none; }
+  .admin-header { background: var(--ink); color: white; padding: 14px 20px; border-radius: var(--radius) var(--radius) 0 0; font-family: 'Syne', sans-serif; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+  .badge-count { background: var(--accent); color: white; font-size: 0.75rem; font-weight: 700; padding: 2px 9px; border-radius: 100px; }
+  .admin-table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead { background: #F5F2EC; position: sticky; top: 0; }
+  th { text-align: left; padding: 10px 14px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+  .empty-state { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 0.9rem; }
+  @media (max-width: 520px) {
+    .form-grid { grid-template-columns: 1fr; }
+    main { margin: 24px auto; }
+    .card { padding: 24px 20px; }
+    header { padding: 14px 20px; }
   }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo" id="logo-container" style="visibility:hidden">Neo<span>ludis</span></div>
+  </div>
+</header>
+<main>
+  <div id="form-section">
+    <!-- Étape 0 : Choix mode livraison (optionnel, activé avec ?choix=1) -->
+    <div class="card" id="step0-card">
+      <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection du mode de livraison</p>
+      <div id="welcome-msg" style="display:none;font-size:1.1rem;color:var(--ink-muted);margin-bottom:8px;font-weight:300"></div>
+      <h1>Comment souhaitez-vous être livré ?</h1>
+      <p class="subtitle">Choisissez votre mode de livraison préféré.</p>
+      <div class="choix-livraison">
+        <button class="choix-btn principal" onclick="choisirLivraison('relais')">
+          <span class="choix-icon">📦</span>
+          <div class="choix-text">
+            <h3>Point relais Colissimo</h3>
+            <p>Je choisis un point de retrait près de chez moi</p>
+          </div>
+        </button>
+        <button class="choix-btn secondaire" onclick="choisirLivraison('domicile')">
+          <span class="choix-icon">🏠</span>
+          <div class="choix-text">
+            <h3>Livraison à domicile</h3>
+            <p>Je reçois mon colis à mon adresse</p>
+          </div>
+        </button>
+      </div>
+    </div>
 
-  const envoyes = resultats.filter(r => r.statut === 'envoyé').length;
-  const erreurs = resultats.filter(r => r.statut === 'erreur').length;
+    <!-- Étape 1 -->
+    <div class="card" id="step1-card">
+      <div id="btn-retour-choix" style="display:none;margin-bottom:16px">
+        <button onclick="retourChoix()" style="background:none;border:none;cursor:pointer;color:var(--ink-muted);font-size:0.88rem;padding:0;display:flex;align-items:center;gap:6px;">
+          ← Modifier mon choix de livraison
+        </button>
+      </div>
+      <div class="steps-indicator"><div class="step-dot active"></div><div class="step-dot"></div></div>
+      <p id="titre-page" style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection de point relais Colissimo</p>
+      <div class="step-badge" id="badge-etape">① Étape 1 / 2</div>
+      <h1>Vos coordonnées</h1>
+      <p class="subtitle">Ces informations nous permettront d'imprimer votre étiquette de livraison.</p>
+      <div class="form-grid">
+        <div class="field"><label for="prenom">Prénom *</label><input type="text" id="prenom" placeholder="Jean" autocomplete="given-name"><span class="error-msg" id="err-prenom">Champ requis</span></div>
+        <div class="field"><label for="nom">Nom *</label><input type="text" id="nom" placeholder="Dupont" autocomplete="family-name"><span class="error-msg" id="err-nom">Champ requis</span></div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="form-grid full"><div class="field"><label for="email">Email *</label><input type="email" id="email" placeholder="jean.dupont@email.com"><span class="error-msg" id="err-email">Email invalide</span></div></div>
+      <div style="height:14px"></div>
+      <div class="form-grid full"><div class="field"><label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="tel" id="telephone" placeholder="06 12 34 56 78"></div></div>
+      <div style="height:14px"></div>
+      <div class="form-grid full"><div class="field"><label for="commande">Numéro de commande *</label><input type="text" id="commande" placeholder="Ex : CMD-2024-001"><span class="error-msg" id="err-commande">Champ requis</span></div></div>
 
-  return res.status(200).json({ success: true, envoyes, erreurs, resultats });
+      <!-- Champs adresse (affichés uniquement si livraison domicile) -->
+      <div id="adresse-fields" style="display:none">
+        <div style="height:14px"></div>
+        <div class="form-grid full"><div class="field"><label for="adresse1">Adresse *</label><input type="text" id="adresse1" placeholder="12 rue de la Paix" autocomplete="street-address"><span class="error-msg" id="err-adresse1">Champ requis</span></div></div>
+        <div style="height:14px"></div>
+        <div class="form-grid"><div class="field"><label for="codepostal">Code postal *</label><input type="text" id="codepostal" placeholder="75001" autocomplete="postal-code"><span class="error-msg" id="err-codepostal">Champ requis</span></div>
+        <div class="field"><label for="ville">Ville *</label><input type="text" id="ville" placeholder="Paris" autocomplete="address-level2"><span class="error-msg" id="err-ville">Champ requis</span></div></div>
+      </div>
+      <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px" id="btn-step2">Choisir mon point relais →</button>
+    </div>
+
+    <!-- Étape 2 -->
+    <div class="card" id="step2-card" style="display:none">
+      <div class="steps-indicator"><div class="step-dot done"></div><div class="step-dot active"></div></div>
+      <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection de point relais Colissimo</p>
+      <div class="step-badge">② Étape 2 / 2</div>
+      <h1>Votre point relais</h1>
+      <p class="subtitle">Recherchez et sélectionnez votre point relais Colissimo le plus proche.</p>
+
+      <div id="widget-container">
+        <div id="loading-widget"><span class="spinner-dark"></span> Chargement du widget…</div>
+      </div>
+
+      <div id="selected-relay">
+        <div class="relay-name-big" id="relay-name-display"></div>
+        <div class="relay-addr-big" id="relay-address-display"></div>
+        <div class="relay-id-big" id="relay-id-display"></div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-valider" onclick="submitForm()" style="margin-top:20px" disabled>✓ Valider ma sélection</button>
+      <button class="btn" onclick="backToStep1()" style="background:transparent;color:var(--ink-muted);box-shadow:none;font-weight:400;font-size:0.9rem">← Retour</button>
+    </div>
+
+    <!-- Confirmation -->
+    <div class="card" id="success-card">
+      <div id="success-screen">
+        <div class="big-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <h2>Merci !</h2>
+        <p>Votre choix de point relais a bien été enregistré.<br>Vous recevrez votre commande à l'adresse sélectionnée.</p>
+        <div style="margin-top:20px;padding:16px;background:var(--bg);border-radius:8px;text-align:left">
+          <div style="font-size:0.78rem;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:8px">Récapitulatif</div>
+          <div id="summary-content" style="font-size:0.9rem;line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Commande déjà enregistrée -->
+    <div class="card" id="already-registered-card" style="display:none">
+      <div style="text-align:center;padding:16px 0">
+        <div style="width:72px;height:72px;background:#FFF3CD;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:2px solid #FFD97D;font-size:2rem">⚠️</div>
+        <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:12px;color:var(--ink)">Choix déjà enregistré</h2>
+        <p style="color:var(--ink-muted);font-size:0.95rem;line-height:1.7;max-width:420px;margin:0 auto">
+          Un choix de livraison a déjà été enregistré pour cette commande.<br><br>
+          Pour toute modification, veuillez contacter <strong id="already-editeur"></strong>.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Admin -->
+  <div id="admin-panel">
+
+    <!-- Onglets -->
+    <div style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--border)">
+      <button id="tab-reponses" onclick="switchTab('reponses')" style="padding:10px 22px;border:none;background:var(--accent);color:white;font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;">📋 Réponses</button>
+      <button id="tab-import" onclick="switchTab('import')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">📥 Import CSV</button>
+    </div>
+
+    <!-- Onglet Réponses -->
+    <div id="panel-reponses">
+      <div class="card" style="padding:0;overflow:hidden;border-radius:0 var(--radius) var(--radius) var(--radius)">
+        <div class="admin-header">
+          <span>📋 Réponses <span class="badge-count" id="response-count">0</span></span>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="downloadCSV()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV</button>
+            <button onclick="clearResponses()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'Syne',sans-serif">🗑 Vider</button>
+          </div>
+        </div>
+        <div id="admin-content"><div class="empty-state">Aucune réponse.</div></div>
+      </div>
+      <p style="text-align:center;font-size:0.8rem;color:var(--ink-muted);margin-top:12px">Téléchargez le CSV régulièrement.</p>
+    </div>
+
+    <!-- Onglet Import CSV -->
+    <div id="panel-import" style="display:none">
+      <div class="card">
+        <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Génération de liens personnalisés</p>
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin-bottom:8px">Importer un fichier commandes</h2>
+        <p class="subtitle">Importez le CSV de l'éditeur pour générer les liens personnalisés à envoyer aux clients.</p>
+
+        <div style="margin:24px 0">
+          <label style="display:block;font-size:0.82rem;font-weight:500;color:var(--ink-muted);margin-bottom:8px;letter-spacing:0.02em;text-transform:uppercase">Fichier CSV commandes</label>
+          <input type="file" id="import-csv-file" accept=".csv,.txt" style="width:100%;padding:12px;border:2px dashed var(--border);border-radius:8px;background:var(--bg);cursor:pointer;font-family:'DM Sans',sans-serif">
+        </div>
+
+        <!-- Mapping colonnes (affiché après chargement) -->
+        <div id="import-mapping" style="display:none">
+          <div class="form-grid" style="margin-bottom:16px">
+            <div class="field">
+              <label>Colonne Référence / Backer ID</label>
+              <select id="col-ref" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Email</label>
+              <select id="col-email" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Prénom <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+              <select id="col-prenom" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Nom <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+              <select id="col-nom" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+            <div class="field">
+              <label>Colonne Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label>
+              <select id="col-tel" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:white"></select>
+            </div>
+          </div>
+          <div id="import-status" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
+          <button class="btn btn-primary" onclick="genererLiens()" style="margin-top:8px">Générer les liens →</button>
+        </div>
+
+        <!-- Résultat -->
+        <div id="import-result" style="display:none;margin-top:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:gap">
+            <span style="font-weight:600" id="import-count"></span>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" onclick="downloadLiens()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV liens</button>
+            </div>
+          </div>
+          <!-- Éditeur de template email -->
+          <div id="email-template-editor" style="display:none;margin-top:24px;padding-top:24px;border-top:1px solid var(--border)">
+            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">✉ Template email</p>
+            <p style="font-size:0.82rem;color:var(--ink-muted);margin-bottom:16px;">Variables disponibles : <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{prenom}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{editeur}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{lien}</code></p>
+            <div class="field" style="margin-bottom:12px">
+              <label>Objet</label>
+              <input type="text" id="email-subject" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box">
+            </div>
+            <div class="field" style="margin-bottom:16px">
+              <label>Corps du message</label>
+              <textarea id="email-body" rows="8" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box;resize:vertical;line-height:1.6"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button onclick="aperçuEmail()" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer">👁 Aperçu</button>
+              <button onclick="envoyerEmails()" id="btn-send-emails" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0;background:#1a1a1a;color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;">✉ Envoyer les emails</button>
+            </div>
+            <!-- Aperçu -->
+            <div id="email-preview" style="display:none;margin-top:16px;padding:16px;border:1.5px solid var(--border);border-radius:8px;background:white">
+              <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:12px">Aperçu (premier backer)</p>
+              <div style="font-size:0.88rem;color:var(--ink-muted);margin-bottom:4px">Objet : <strong id="preview-subject" style="color:var(--ink)"></strong></div>
+              <div style="margin-top:12px;white-space:pre-wrap;font-size:0.92rem;line-height:1.6" id="preview-body"></div>
+            </div>
+          </div>
+          <div id="send-status" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
+          <div class="admin-table-wrap" style="max-height:400px">
+            <table id="import-table"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Widget Colissimo -->
+<!-- Librairies requises pour le widget Colissimo v2 -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet" />
+<script src="https://ws.colissimo.fr/widget-colissimo/js/jquery.plugin.colissimo.min.js"></script>
+
+<script>
+  (function() {
+    const editeur = new URLSearchParams(window.location.search).get('editeur');
+    const container = document.getElementById('logo-container');
+    if (!container) return;
+
+    // ── Config par éditeur ──────────────────────────────────────────
+    // fond   : couleur de fond du header
+    // filtre : filtre CSS appliqué au logo (invert pour logos noirs sur fond sombre)
+    const CONFIG = {
+      'neoludis':    { fond: '#1a1a1a', filtre: 'none',                       choix: false },
+      'D_ART':       { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Antre_monde': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Tiki':        { fond: '#ffffff', filtre: 'none',                       choix: false },
+      'dendrobat':   { fond: '#ffffff', filtre: 'none',                       choix: true  },
+      // Ajouter ici les prochains éditeurs
+    };
+
+    const cfg = CONFIG[editeur] || { fond: '#1a1a1a', filtre: 'none' };
+
+    // Appliquer le fond du header
+    const header = document.querySelector('header');
+    if (header) header.style.backgroundColor = cfg.fond;
+
+    // Sans éditeur : afficher le logo Neoludis par défaut
+    if (!editeur) { container.style.visibility = 'visible'; return; }
+
+    // Vider immédiatement le texte pour éviter tout flash
+    container.innerHTML = '';
+    container.style.visibility = 'visible';
+
+    // Essayer SVG → PNG → JPG
+    const extensions = ['svg', 'png', 'jpg', 'gif'];
+    let idx = 0;
+    function tryNext() {
+      if (idx >= extensions.length) return;
+      const ext = extensions[idx++];
+      const img = new Image();
+      img.onload = function() {
+        container.innerHTML = '';
+        img.alt = editeur;
+        img.style.cssText = `max-height:80px; max-width:260px; object-fit:contain; filter:${cfg.filtre};`;
+        container.appendChild(img);
+      };
+      img.onerror = tryNext;
+      img.src = `/logos/${editeur}.${ext}`;
+    }
+    tryNext();
+  })();
+
+const STORAGE_KEY = 'neoludis_relais_responses';
+let selectedRelayData = null;
+let modeLivraison = 'relais'; // 'relais' ou 'domicile'
+
+// Activer l'étape 0 si ?choix=1 dans l'URL
+const _params = new URLSearchParams(window.location.search);
+if (_params.get('choix') === '1') {
+  document.getElementById('step0-card').style.display = 'block';
+  document.getElementById('step1-card').style.display = 'none';
 }
+
+// Afficher le bouton retour si ?choix=1
+if (_params.get('choix') === '1') {
+  document.getElementById('btn-retour-choix').style.display = 'block';
+}
+
+function retourChoix() {
+  modeLivraison = 'relais';
+  document.getElementById('step1-card').style.display = 'none';
+  document.getElementById('step0-card').style.display = 'block';
+  // Réinitialiser les champs adresse
+  document.getElementById('adresse-fields').style.display = 'none';
+  document.getElementById('btn-step2').textContent = 'Choisir mon point relais →';
+  document.getElementById('btn-step2').disabled = false;
+}
+
+function choisirLivraison(mode) {
+  modeLivraison = mode;
+  document.getElementById('step0-card').style.display = 'none';
+  document.getElementById('step1-card').style.display = 'block';
+
+  const adresseFields = document.getElementById('adresse-fields');
+  const btnStep2 = document.getElementById('btn-step2');
+  const titrePage = document.getElementById('titre-page');
+  const badgeEtape = document.getElementById('badge-etape');
+
+  if (mode === 'domicile') {
+    adresseFields.style.display = 'block';
+    btnStep2.textContent = 'Valider mon adresse →';
+    titrePage.textContent = 'Livraison à domicile';
+    badgeEtape.style.display = 'none';
+  } else {
+    adresseFields.style.display = 'none';
+    btnStep2.textContent = 'Choisir mon point relais →';
+    titrePage.textContent = 'Sélection de point relais Colissimo';
+    badgeEtape.style.display = 'inline-flex';
+  }
+}
+
+// ─── CONFIG MOTS DE PASSE ADMIN PAR ÉDITEUR ───────────────────────
+const ADMIN_PASSWORDS = {
+  '':            'Neoludis2024!',   // admin global (toutes les réponses)
+  'dendrobat':   'Dendrobat2024!',
+  'D_ART':       'DART2024!',
+  'Antre_monde': 'AntreMonde2024!',
+  'Tiki':        'Tiki2024!',
+  'neoludis':    'Neoludis2024!',
+  // Ajouter les prochains éditeurs ici
+};
+
+let adminEditeur = ''; // éditeur courant pour filtrer les réponses
+
+if (window.location.search.includes('admin')) {
+  const editeurParam = new URLSearchParams(window.location.search).get('editeur') || '';
+  const pwdAttendu = ADMIN_PASSWORDS[editeurParam];
+
+  if (!pwdAttendu) {
+    alert('Éditeur inconnu ou accès non autorisé.');
+    window.location.href = '/';
+  } else {
+    const pwd = prompt(`Mot de passe admin${editeurParam ? ' (' + editeurParam + ')' : ''} :`);
+    if (pwd === pwdAttendu) {
+      adminEditeur = editeurParam;
+      document.getElementById('form-section').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+      renderAdminTable();
+    } else {
+      alert('Mot de passe incorrect.');
+      window.location.href = '/';
+    }
+  }
+}
+
+function goToStep2() {
+  const prenom = document.getElementById('prenom').value.trim();
+  const nom = document.getElementById('nom').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const commande = document.getElementById('commande').value.trim();
+  let valid = true;
+
+  [['prenom', prenom], ['nom', nom]].forEach(([id, val]) => {
+    const el = document.getElementById(id), err = document.getElementById('err-'+id);
+    if (!val) { el.classList.add('error'); err.style.display = 'block'; valid = false; }
+    else { el.classList.remove('error'); err.style.display = 'none'; }
+  });
+  const emailEl = document.getElementById('email'), emailErr = document.getElementById('err-email');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    emailEl.classList.add('error'); emailErr.style.display = 'block'; valid = false;
+  } else { emailEl.classList.remove('error'); emailErr.style.display = 'none'; }
+
+  // Numéro de commande obligatoire
+  const cmdEl = document.getElementById('commande'), cmdErr = document.getElementById('err-commande');
+  if (!commande) { cmdEl.classList.add('error'); cmdErr.style.display = 'block'; valid = false; }
+  else { cmdEl.classList.remove('error'); cmdErr.style.display = 'none'; }
+
+  // Validation champs adresse si mode domicile
+  if (modeLivraison === 'domicile') {
+    ['adresse1', 'codepostal', 'ville'].forEach(id => {
+      const el = document.getElementById(id), err = document.getElementById('err-'+id);
+      if (!el.value.trim()) { el.classList.add('error'); err.style.display = 'block'; valid = false; }
+      else { el.classList.remove('error'); err.style.display = 'none'; }
+    });
+  }
+
+  if (!valid) return;
+
+  // Vérifier si la commande a déjà été enregistrée
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  const btn = document.getElementById('btn-step2');
+  btn.innerHTML = '<span class="spinner"></span> Vérification…';
+  btn.disabled = true;
+
+  fetch(`/api/check-order?editeur=${encodeURIComponent(editeur)}&commande=${encodeURIComponent(commande)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.existe) {
+        // Commande déjà enregistrée → page bloquante
+        btn.innerHTML = 'Choisir mon point relais →';
+        btn.disabled = false;
+        document.getElementById('step1-card').style.display = 'none';
+        document.getElementById('already-registered-card').style.display = 'block';
+        document.getElementById('already-editeur').textContent = editeur || 'votre revendeur';
+      } else {
+        // Commande nouvelle → continuer
+        if (modeLivraison === 'domicile') {
+          btn.innerHTML = 'Valider mon adresse →';
+          btn.disabled = false;
+          submitForm();
+          return;
+        }
+        btn.innerHTML = '<span class="spinner"></span> Chargement…';
+        document.getElementById('step1-card').style.display = 'none';
+        document.getElementById('step2-card').style.display = 'block';
+        initWidget();
+      }
+    })
+    .catch(() => {
+      // En cas d'erreur API, on laisse passer (pas bloquant)
+      btn.innerHTML = 'Choisir mon point relais →';
+      btn.disabled = false;
+      if (modeLivraison === 'domicile') { submitForm(); return; }
+      document.getElementById('step1-card').style.display = 'none';
+      document.getElementById('step2-card').style.display = 'block';
+      initWidget();
+    });
+}
+
+
+function backToStep1() {
+  document.getElementById('step2-card').style.display = 'none';
+  document.getElementById('step1-card').style.display = 'block';
+  const btn = document.getElementById('btn-step2');
+  btn.innerHTML = 'Choisir mon point relais →';
+  btn.disabled = false;
+  // Fermer le widget proprement
+  try { $('#widget-container').frameColissimoClose(); } catch(e) {}
+}
+
+async function initWidget() {
+  try {
+    // Récupérer le token via la fonction Netlify
+    const res = await fetch('/api/auth-colissimo', { method: 'POST' });
+    const data = await res.json();
+
+    if (!data.token) {
+      document.getElementById('loading-widget').innerHTML = '❌ Erreur d\'authentification. Veuillez réessayer.';
+      return;
+    }
+
+    const token = data.token;
+    document.getElementById('loading-widget').style.display = 'none';
+    // Utiliser la méthode officielle jQuery du plugin Colissimo v2
+    $('#widget-container').frameColissimoOpen({
+      URLColissimo: 'https://ws.colissimo.fr',
+      callBackFrame: 'onRelaisSelected',
+      ceCountry: 'FR',
+      ceAddress: '',
+      ceZipCode: '',
+      ceTown: '',
+      dyWeight: 1000,
+      filterRelay: '1',
+      origin: 'WIDGET',
+      token: token
+    });
+
+  } catch(err) {
+    document.getElementById('loading-widget').innerHTML = '❌ Erreur de chargement. Veuillez réessayer.';
+    console.error(err);
+  }
+}
+
+// Callback appelé par le widget quand un point est sélectionné
+function onRelaisSelected(point) {
+  console.log('Point relais selectionne:', JSON.stringify(point));
+  if (!point) return;
+  selectedRelayData = point;
+  const nom = point.nom || point.libelle || point.raisonSociale || '';
+  const adresse = point.adresse1 || point.adresse || '';
+  const cp = point.codePostal || point.codePostale || '';
+  const ville = point.localite || point.ville || '';
+  const id = point.identifiant || point.code || point.id || '';
+  document.getElementById('relay-name-display').textContent = nom;
+  document.getElementById('relay-address-display').textContent = [adresse, cp, ville].filter(Boolean).join(', ');
+  document.getElementById('relay-id-display').textContent = 'ID : ' + id;
+  document.getElementById('selected-relay').style.display = 'block';
+  document.getElementById('btn-valider').disabled = false;
+}
+
+function submitForm() {
+  const isDomicile = modeLivraison === 'domicile';
+  if (!isDomicile && !selectedRelayData) return;
+  const p = selectedRelayData || {};
+  const record = {
+    date: new Date().toLocaleString('fr-FR'),
+    editeur: new URLSearchParams(window.location.search).get('editeur') || 'Inconnu',
+    commande: document.getElementById('commande').value.trim(),
+    prenom: document.getElementById('prenom').value.trim(),
+    nom: document.getElementById('nom').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    telephone: document.getElementById('telephone').value.trim(),
+    mode_livraison: isDomicile ? 'domicile' : 'relais',
+    relay_id: isDomicile ? '' : (p.identifiant || ''),
+    relay_nom: isDomicile ? 'Domicile' : (p.nom || p.libelle || ''),
+    relay_adresse: isDomicile ? document.getElementById('adresse1').value.trim() : (p.adresse1 || ''),
+    relay_codepostal: isDomicile ? document.getElementById('codepostal').value.trim() : (p.codePostal || ''),
+    relay_ville: isDomicile ? document.getElementById('ville').value.trim() : (p.localite || ''),
+    relay_type: isDomicile ? 'domicile' : (p.typeDePoint || ''),
+  };
+  const existing = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  existing.push(record);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+  fetch('/api/save-response', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(record)
+  }).catch(err => console.error('Sheets error:', err));
+  document.getElementById('step1-card').style.display = 'none';
+  document.getElementById('step2-card').style.display = 'none';
+  document.getElementById('success-card').style.display = 'block';
+  const livraisonHtml = isDomicile
+    ? '🏠 Domicile<br><span style="color:var(--ink-muted);font-size:0.85rem">' + record.relay_adresse + ', ' + record.relay_codepostal + ' ' + record.relay_ville + '</span>'
+    : '📦 ' + record.relay_nom + '<br><span style="color:var(--ink-muted);font-size:0.85rem">' + record.relay_adresse + ', ' + record.relay_codepostal + ' ' + record.relay_ville + '</span>';
+  document.getElementById('summary-content').innerHTML =
+    (record.commande ? '<span style="font-size:0.8rem;color:var(--ink-muted)">Commande : ' + record.commande + '</span><br>' : '') +
+    '<strong>' + record.prenom + ' ' + record.nom + '</strong><br>' + record.email + '<br>' + livraisonHtml;
+}
+
+// Pré-remplissage via API si ?ref= dans l'URL
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const ref     = p.get('ref');
+  const editeur = p.get('editeur') || '';
+  if (!ref) return;
+
+  // Mettre la ref en lecture seule immédiatement
+  const cmdEl = document.getElementById('commande');
+  if (cmdEl) {
+    cmdEl.value    = ref;
+    cmdEl.readOnly = true;
+    cmdEl.style.background = '#f0f0f0';
+    cmdEl.style.color      = 'var(--ink-muted)';
+  }
+
+  // Récupérer les infos backer depuis le Sheet
+  fetch(`/api/get-backer?editeur=${encodeURIComponent(editeur)}&ref=${encodeURIComponent(ref)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.trouve) return;
+      if (data.prenom) {
+      const welcome = document.getElementById('welcome-msg');
+      if (welcome) { welcome.textContent = `Bonjour ${data.prenom} 👋`; welcome.style.display = 'block'; }
+    }
+    if (data.email     && document.getElementById('email'))     document.getElementById('email').value     = data.email;
+      if (data.prenom    && document.getElementById('prenom'))    document.getElementById('prenom').value    = data.prenom;
+      if (data.nom       && document.getElementById('nom'))       document.getElementById('nom').value       = data.nom;
+      if (data.telephone && document.getElementById('telephone')) document.getElementById('telephone').value = data.telephone;
+    })
+    .catch(() => {}); // Non bloquant
+})();
+function switchTab(tab) {
+  document.getElementById('panel-reponses').style.display = tab === 'reponses' ? 'block' : 'none';
+  document.getElementById('panel-import').style.display   = tab === 'import'   ? 'block' : 'none';
+  document.getElementById('tab-reponses').style.background = tab === 'reponses' ? 'var(--accent)' : 'var(--bg)';
+  document.getElementById('tab-reponses').style.color      = tab === 'reponses' ? 'white' : 'var(--ink-muted)';
+  document.getElementById('tab-import').style.background   = tab === 'import'   ? 'var(--accent)' : 'var(--bg)';
+  document.getElementById('tab-import').style.color        = tab === 'import'   ? 'white' : 'var(--ink-muted)';
+}
+
+// ─── ONGLET RÉPONSES ────────────────────────────────────────────
+function renderAdminTable() {
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  // Filtrer par éditeur si admin non global
+  if (adminEditeur) {
+    data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
+  }
+  document.getElementById('response-count').textContent = data.length;
+  if (!data.length) { document.getElementById('admin-content').innerHTML = '<div class="empty-state">Aucune réponse.</div>'; return; }
+  const cols   = ['date','commande','prenom','nom','email','telephone','mode_livraison','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville'];
+  const labels = ['Date','Réf.','Prénom','Nom','Email','Tél.','Mode','Point/Adresse','Adresse','ID Relais','CP','Ville'];
+  let html = '<div class="admin-table-wrap"><table><thead><tr>';
+  labels.forEach(l => html += `<th>${l}</th>`);
+  html += '</tr></thead><tbody>';
+  data.forEach(row => { html += '<tr>'; cols.forEach(c => html += `<td>${row[c]||'—'}</td>`); html += '</tr>'; });
+  html += '</tbody></table></div>';
+  document.getElementById('admin-content').innerHTML = html;
+}
+
+function downloadCSV() {
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  if (adminEditeur) data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
+  if (!data.length) { alert('Aucune donnée.'); return; }
+  const cols   = ['date','editeur','commande','prenom','nom','email','telephone','mode_livraison','relay_nom','relay_adresse','relay_id','relay_codepostal','relay_ville','relay_type'];
+  const labels = ['Date','Éditeur','Réf. Commande','Prénom','Nom','Email','Téléphone','Mode livraison','Point Relais/Domicile','Adresse','ID Colissimo','Code Postal','Ville','Type'];
+  const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
+  let csv = '\uFEFF'+labels.map(esc).join(';')+'\n';
+  data.forEach(row => { csv += cols.map(c => esc(row[c])).join(';')+'\n'; });
+  const suffix = adminEditeur ? '_'+adminEditeur : '_tous';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `points-relais${suffix}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+function clearResponses() {
+  if (!confirm('Vider toutes les réponses ?')) return;
+  localStorage.removeItem(STORAGE_KEY); renderAdminTable();
+}
+
+// ─── ONGLET IMPORT CSV ──────────────────────────────────────────
+let importData = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('import-csv-file');
+  if (fileInput) fileInput.addEventListener('change', chargerCSV);
+});
+
+function chargerCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const text = ev.target.result;
+    // Détecter séparateur ; ou ,
+    const sep = text.indexOf(';') !== -1 ? ';' : ',';
+    const lines = text.trim().split(/\r?\n/);
+    const headers = lines[0].split(sep).map(h => h.replace(/^"|"$/g,'').trim());
+    importData = lines.slice(1).map(line => {
+      const vals = line.split(sep).map(v => v.replace(/^"|"$/g,'').trim());
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = vals[i]||'');
+      return obj;
+    }).filter(row => Object.values(row).some(v => v));
+
+    // Remplir les selects de mapping
+    const selects = ['col-ref','col-email','col-prenom','col-nom','col-tel'];
+    const defaults = {
+      'col-ref':    ['backer_id','BackerID','Backer ID','ref','commande','id'],
+      'col-email':  ['email','Email','e-mail'],
+      'col-prenom': ['prenom','prénom','Prénom','PrénomNom','firstname','first_name'],
+      'col-nom':    ['nom','Nom','lastname','last_name'],
+      'col-tel':    ['telephone','téléphone','tel','phone','mobile'],
+    };
+    selects.forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '<option value="">— Aucune —</option>';
+      headers.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h; opt.textContent = h;
+        // Pré-sélectionner si le nom correspond
+        if (defaults[id] && defaults[id].some(d => h.toLowerCase().includes(d.toLowerCase()))) {
+          opt.selected = true;
+        }
+        sel.appendChild(opt);
+      });
+    });
+
+    document.getElementById('import-mapping').style.display = 'block';
+    document.getElementById('import-result').style.display = 'none';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function genererLiens() {
+  const colRef    = document.getElementById('col-ref').value;
+  const colEmail  = document.getElementById('col-email').value;
+  const colPrenom = document.getElementById('col-prenom').value;
+  const colNom    = document.getElementById('col-nom').value;
+  const colTel    = document.getElementById('col-tel') ? document.getElementById('col-tel').value : '';
+
+  if (!colRef) { alert('Veuillez sélectionner la colonne Référence / Backer ID'); return; }
+
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  const baseUrl = window.location.origin + '/?editeur=' + encodeURIComponent(editeur);
+  // Récupérer choix depuis la config éditeur
+  const configEditeurs = { 'dendrobat': true }; // même liste que CONFIG ci-dessus
+  const avecChoix = configEditeurs[editeur] || new URLSearchParams(window.location.search).get('choix') === '1';
+  const choix = avecChoix ? '&choix=1' : '';
+
+  window._liensGeneres = importData.map(row => {
+    const ref    = row[colRef]    || '';
+    const email  = row[colEmail]  || '';
+    const prenom = row[colPrenom] || '';
+    const nom    = row[colNom]    || '';
+    const tel    = colTel ? (row[colTel] || '') : '';
+    const url    = baseUrl + choix + '&ref=' + encodeURIComponent(ref);
+    return { ref, prenom, nom, email, telephone: tel, lien: url };
+  });
+
+  // Stocker les backers dans le Sheet pour le pré-remplissage
+  const btn = event.target;
+  btn.innerHTML = '<span class="spinner"></span> Import en cours…';
+  btn.disabled = true;
+
+  fetch('/api/import-backers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ editeur, backers: window._liensGeneres }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    const msg = data.importes > 0
+      ? `✅ ${data.importes} backer(s) importé(s)${data.ignores ? ', ' + data.ignores + ' déjà présent(s)' : ''}`
+      : `ℹ️ ${data.message || 'Import terminé'}`;
+    btn.innerHTML = 'Générer les liens →';
+    btn.disabled = false;
+    document.getElementById('import-status').textContent = msg;
+    document.getElementById('import-status').style.display = 'block';
+  })
+  .catch(() => {
+    btn.innerHTML = 'Générer les liens →';
+    btn.disabled = false;
+  });
+
+  // Afficher le tableau de liens
+  document.getElementById('import-count').textContent = `${window._liensGeneres.length} liens générés`;
+  let html = '<thead><tr><th>Réf.</th><th>Prénom</th><th>Nom</th><th>Email</th><th>Lien</th></tr></thead><tbody>';
+  window._liensGeneres.forEach(r => {
+    html += `<tr><td>${r.ref}</td><td>${r.prenom}</td><td>${r.nom}</td><td>${r.email}</td><td><a href="${r.lien}" target="_blank" style="font-size:0.8rem;word-break:break-all">${r.lien}</a></td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('import-table').innerHTML = html;
+  document.getElementById('import-result').style.display = 'block';
+
+  // Initialiser le template email avec les valeurs par défaut
+  const editeurLabel = editeur || 'Neoludis';
+  const subjectEl = document.getElementById('email-subject');
+  const bodyEl    = document.getElementById('email-body');
+  if (subjectEl && !subjectEl.value) {
+    subjectEl.value = `Choisissez votre mode de livraison - ${editeurLabel}`;
+  }
+  if (bodyEl && !bodyEl.value) {
+    bodyEl.value = `Bonjour {prenom},\n\nVotre commande est prête à être expédiée.\nCliquez sur le lien ci-dessous pour choisir votre mode de livraison :\n\n{lien}\n\nCordialement,\nL'équipe {editeur} / Neoludis`;
+  }
+  document.getElementById('email-template-editor').style.display = 'block';
+}
+
+function aperçuEmail() {
+  if (!window._liensGeneres || !window._liensGeneres.length) return;
+  const backer  = window._liensGeneres.find(b => b.email) || window._liensGeneres[0];
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || 'Neoludis';
+  const subject = document.getElementById('email-subject').value;
+  const body    = document.getElementById('email-body').value;
+
+  const replace = str => str
+    .replace(/{prenom}/g,  backer.prenom || 'Prénom')
+    .replace(/{editeur}/g, editeur)
+    .replace(/{lien}/g,    backer.lien);
+
+  document.getElementById('preview-subject').textContent = replace(subject);
+  document.getElementById('preview-body').textContent    = replace(body);
+  document.getElementById('email-preview').style.display = 'block';
+}
+
+async function envoyerEmails() {
+  if (!window._liensGeneres || !window._liensGeneres.length) return;
+
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  const subject = document.getElementById('email-subject').value;
+  const body    = document.getElementById('email-body').value;
+  const nb = window._liensGeneres.filter(b => b.email).length;
+
+  if (!confirm(`Envoyer ${nb} email(s) aux backers de ${editeur} ?`)) return;
+
+  const btn = document.getElementById('btn-send-emails');
+  const status = document.getElementById('send-status');
+  btn.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,0.4);border-top-color:white"></span> Envoi en cours…';
+  btn.disabled = true;
+  status.style.display = 'block';
+  status.textContent = 'Envoi en cours, merci de patienter…';
+
+  try {
+    const r = await fetch('/api/send-emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editeur, backers: window._liensGeneres, subject, body }),
+    });
+    const data = await r.json();
+
+    status.textContent = `✅ ${data.envoyes} email(s) envoyé(s)${data.erreurs ? ' — ⚠️ ' + data.erreurs + ' erreur(s)' : ''}`;
+    btn.innerHTML = '✉ Envoyer les emails';
+    btn.disabled = false;
+  } catch (err) {
+    status.textContent = '❌ Erreur lors de l\'envoi : ' + err.message;
+    btn.innerHTML = '✉ Envoyer les emails';
+    btn.disabled = false;
+  }
+}
+
+function downloadLiens() {
+  if (!window._liensGeneres || !window._liensGeneres.length) return;
+  const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
+  let csv = '\uFEFFPrénom;Nom;Email;Lien\n';
+  window._liensGeneres.forEach(r => {
+    csv += [r.prenom, r.nom, r.email, r.lien].map(esc).join(';') + '\n';
+  });
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || 'export';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `liens_${editeur}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+</script>
+
+</body>
+</html>
