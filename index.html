@@ -212,6 +212,7 @@
     <!-- Onglets -->
     <div style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--border)">
       <button id="tab-reponses" onclick="switchTab('reponses')" style="padding:10px 22px;border:none;background:var(--accent);color:white;font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;">📋 Réponses</button>
+      <button id="tab-mail" onclick="switchTab('mail')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">✉ Mails</button>
       <button id="tab-import" onclick="switchTab('import')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">📥 Import</button>
       <button id="tab-suivi" onclick="switchTab('suivi')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">📊 Suivi</button>
     </div>
@@ -229,6 +230,59 @@
         <div id="admin-content"><div class="empty-state">Aucune réponse.</div></div>
       </div>
       <p style="text-align:center;font-size:0.8rem;color:var(--ink-muted);margin-top:12px">Téléchargez le CSV régulièrement.</p>
+    </div>
+
+    <!-- Onglet Mail -->
+    <div id="panel-mail" style="display:none">
+      <div class="card">
+        <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px">Templates emails</p>
+        <p style="font-size:0.82rem;color:var(--ink-muted);margin-bottom:24px">Variables disponibles : <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{prenom}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{editeur}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{lien}</code></p>
+
+        <!-- Mail initial -->
+        <div style="margin-bottom:32px;padding:20px;border:1.5px solid var(--border);border-radius:12px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <span style="background:#E8431A;color:white;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;font-family:'Syne',sans-serif">1er envoi</span>
+            <h3 style="font-family:'Syne',sans-serif;font-size:1rem;margin:0">Mail initial</h3>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Objet</label>
+            <input type="text" id="mail-initial-subject" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box">
+          </div>
+          <div class="field" style="margin-bottom:16px">
+            <label>Corps du message</label>
+            <textarea id="mail-initial-body" rows="7" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box;resize:vertical;line-height:1.6"></textarea>
+          </div>
+          <button onclick="aperçuMail('initial')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer">👁 Aperçu</button>
+          <div id="preview-initial" style="display:none;margin-top:16px;padding:16px;border:1.5px solid var(--border);border-radius:8px;background:white">
+            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px">Aperçu</p>
+            <div style="font-size:0.88rem;color:var(--ink-muted);margin-bottom:8px">Objet : <strong id="preview-initial-subject" style="color:var(--ink)"></strong></div>
+            <div style="white-space:pre-wrap;font-size:0.92rem;line-height:1.6" id="preview-initial-body"></div>
+          </div>
+        </div>
+
+        <!-- Mail de relance -->
+        <div style="padding:20px;border:1.5px solid var(--border);border-radius:12px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <span style="background:#1a1a1a;color:white;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;font-family:'Syne',sans-serif">Relance</span>
+            <h3 style="font-family:'Syne',sans-serif;font-size:1rem;margin:0">Mail de relance</h3>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Objet</label>
+            <input type="text" id="mail-relance-subject" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box">
+          </div>
+          <div class="field" style="margin-bottom:16px">
+            <label>Corps du message</label>
+            <textarea id="mail-relance-body" rows="7" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box;resize:vertical;line-height:1.6"></textarea>
+          </div>
+          <button onclick="aperçuMail('relance')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer">👁 Aperçu</button>
+          <div id="preview-relance" style="display:none;margin-top:16px;padding:16px;border:1.5px solid var(--border);border-radius:8px;background:white">
+            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px">Aperçu</p>
+            <div style="font-size:0.88rem;color:var(--ink-muted);margin-bottom:8px">Objet : <strong id="preview-relance-subject" style="color:var(--ink)"></strong></div>
+            <div style="white-space:pre-wrap;font-size:0.92rem;line-height:1.6" id="preview-relance-body"></div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- Onglet Import CSV -->
@@ -277,29 +331,6 @@
             <span style="font-weight:600" id="import-count"></span>
             <div style="display:flex;gap:10px">
               <button class="btn btn-primary" onclick="downloadLiens()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV liens</button>
-            </div>
-          </div>
-          <!-- Éditeur de template email -->
-          <div id="email-template-editor" style="display:none;margin-top:24px;padding-top:24px;border-top:1px solid var(--border)">
-            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">✉ Template email</p>
-            <p style="font-size:0.82rem;color:var(--ink-muted);margin-bottom:16px;">Variables disponibles : <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{prenom}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{editeur}</code> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{lien}</code></p>
-            <div class="field" style="margin-bottom:12px">
-              <label>Objet</label>
-              <input type="text" id="email-subject" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box">
-            </div>
-            <div class="field" style="margin-bottom:16px">
-              <label>Corps du message</label>
-              <textarea id="email-body" rows="8" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;box-sizing:border-box;resize:vertical;line-height:1.6"></textarea>
-            </div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-              <button onclick="aperçuEmail()" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer">👁 Aperçu</button>
-              <button onclick="envoyerEmails()" id="btn-send-emails" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0;background:#1a1a1a;color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;">✉ Envoyer les emails</button>
-            </div>
-            <!-- Aperçu -->
-            <div id="email-preview" style="display:none;margin-top:16px;padding:16px;border:1.5px solid var(--border);border-radius:8px;background:white">
-              <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:12px">Aperçu (premier backer)</p>
-              <div style="font-size:0.88rem;color:var(--ink-muted);margin-bottom:4px">Objet : <strong id="preview-subject" style="color:var(--ink)"></strong></div>
-              <div style="margin-top:12px;white-space:pre-wrap;font-size:0.92rem;line-height:1.6" id="preview-body"></div>
             </div>
           </div>
           <div id="send-status" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
@@ -680,11 +711,12 @@ function submitForm() {
     .catch(() => {}); // Non bloquant
 })();
 function switchTab(tab) {
-  ['reponses','import','suivi'].forEach(t => {
-    document.getElementById('panel-' + t).style.display   = tab === t ? 'block' : 'none';
+  ['reponses','mail','import','suivi'].forEach(t => {
+    document.getElementById('panel-' + t).style.display    = tab === t ? 'block' : 'none';
     document.getElementById('tab-'   + t).style.background = tab === t ? 'var(--accent)' : 'var(--bg)';
     document.getElementById('tab-'   + t).style.color      = tab === t ? 'white' : 'var(--ink-muted)';
   });
+  if (tab === 'mail')  initMailTemplates();
   if (tab === 'suivi') chargerSuivi();
 }
 
@@ -843,17 +875,56 @@ function genererLiens() {
   document.getElementById('import-table').innerHTML = html;
   document.getElementById('import-result').style.display = 'block';
 
-  // Initialiser le template email avec les valeurs par défaut
-  const editeurLabel = editeur || 'Neoludis';
-  const subjectEl = document.getElementById('email-subject');
-  const bodyEl    = document.getElementById('email-body');
-  if (subjectEl && !subjectEl.value) {
-    subjectEl.value = `Choisissez votre mode de livraison - ${editeurLabel}`;
+}
+// (templates gérés dans l'onglet Mail)
+
+function toggleCheckAll(cb) {
+  document.querySelectorAll('.backer-check').forEach(c => c.checked = cb.checked);
+}
+
+async function envoyerSelection(type) {
+  const editeur  = new URLSearchParams(window.location.search).get('editeur') || '';
+  const checked  = [...document.querySelectorAll('.backer-check:checked')];
+  if (!checked.length) { alert('Sélectionnez au moins un backer.'); return; }
+
+  const { subject, body } = getMailTemplate(type);
+  const baseUrl = window.location.origin + `/?editeur=${encodeURIComponent(editeur)}&choix=1`;
+
+  const backers = checked.map(cb => ({
+    ref:    cb.value,
+    email:  cb.dataset.email,
+    prenom: cb.dataset.prenom,
+    lien:   `${baseUrl}&ref=${encodeURIComponent(cb.value)}`,
+  }));
+
+  if (!confirm(`Envoyer ${backers.length} email(s) (${type}) ?`)) return;
+
+  const status = document.getElementById('suivi-send-status');
+  status.style.display = 'block';
+  status.textContent   = 'Envoi en cours…';
+
+  try {
+    const r    = await fetch('/api/send-emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editeur, backers, subject, body }),
+    });
+    const data = await r.json();
+    status.textContent = `✅ ${data.envoyes} email(s) envoyé(s)${data.erreurs ? ' — ⚠️ ' + data.erreurs + ' erreur(s)' : ''}`;
+
+    if (data.envoyes > 0) {
+      const refs = (data.resultats || []).filter(r => r.statut === 'envoyé').map(r => r.ref);
+      if (refs.length) {
+        fetch('/api/update-backer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ editeur, refs }),
+        }).then(() => chargerSuivi()).catch(() => {});
+      }
+    }
+  } catch (err) {
+    status.textContent = '❌ Erreur : ' + err.message;
   }
-  if (bodyEl && !bodyEl.value) {
-    bodyEl.value = `Bonjour {prenom},\n\nVotre commande est prête à être expédiée.\nCliquez sur le lien ci-dessous pour choisir votre mode de livraison :\n\n{lien}\n\nCordialement,\nL'équipe {editeur} / Neoludis`;
-  }
-  document.getElementById('email-template-editor').style.display = 'block';
 }
 
 async function envoyerTous(mode) {
@@ -878,9 +949,9 @@ async function envoyerTous(mode) {
   const label = mode === 'non_envoyes' ? 'Envoyer à tous' : 'Relancer les non-répondants';
   if (!confirm(`${label} : envoyer ${cibles.length} email(s) ?`)) return;
 
-  // Récupérer le template depuis l'onglet Import (s'il existe) ou utiliser le défaut
-  const subject = document.getElementById('email-subject')?.value || `Choisissez votre mode de livraison - ${editeur}`;
-  const body    = document.getElementById('email-body')?.value    || '';
+  // Utiliser le bon template selon le mode
+  const tplType = mode === 'non_envoyes' ? 'initial' : 'relance';
+  const { subject, body } = getMailTemplate(tplType);
 
   // Construire les liens pour chaque backer
   const baseUrl = window.location.origin + `/?editeur=${encodeURIComponent(editeur)}&choix=1`;
@@ -954,18 +1025,22 @@ async function chargerSuivi() {
       statCard('Ont répondu',      repondus,  '#e8f5e9') +
       statCard('En attente',       enAttente >= 0 ? enAttente : '—', '#fce4ec');
 
+    // Bouton envoyer sélection
+    const btnSelection = `<div style="margin-bottom:12px;display:flex;gap:10px;align-items:center">
+      <label style="font-size:0.85rem;cursor:pointer"><input type="checkbox" id="check-all" onchange="toggleCheckAll(this)"> Tout sélectionner</label>
+      <button onclick="envoyerSelection('initial')" style="padding:6px 14px;font-size:0.82rem;background:#E8431A;color:white;border:none;border-radius:6px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600">✉ Envoyer (initial)</button>
+      <button onclick="envoyerSelection('relance')" style="padding:6px 14px;font-size:0.82rem;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600">🔁 Envoyer (relance)</button>
+    </div>`;
+
     // Tableau
-    let html = '<div class="admin-table-wrap"><table><thead><tr>' +
-      '<th>Réf.</th><th>Prénom</th><th>Nom</th><th>Email</th><th>Email envoyé</th><th>A répondu</th><th>Action</th>' +
+    let html = btnSelection + '<div class="admin-table-wrap"><table><thead><tr>' +
+      '<th style="width:32px"></th><th>Réf.</th><th>Prénom</th><th>Nom</th><th>Email</th><th>Email envoyé</th><th>A répondu</th>' +
       '</tr></thead><tbody>';
 
     data.backers.forEach(b => {
       const emailBadge   = b.email_envoye ? '✅' : '❌';
       const reponseBadge = b.a_repondu    ? '✅' : b.email_envoye ? '⏳' : '—';
-      const btnRelance   = (!b.a_repondu && b.email_envoye)
-        ? `<button onclick="relancerBacker('${b.ref}')" style="padding:4px 10px;font-size:0.78rem;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;font-family:'Syne',sans-serif">Relancer</button>`
-        : '';
-      html += `<tr><td>${b.ref}</td><td>${b.prenom}</td><td>${b.nom}</td><td>${b.email}</td><td style="text-align:center">${emailBadge}</td><td style="text-align:center">${reponseBadge}</td><td>${btnRelance}</td></tr>`;
+      html += `<tr><td><input type="checkbox" class="backer-check" value="${b.ref}" data-email="${b.email}" data-prenom="${b.prenom}"></td><td>${b.ref}</td><td>${b.prenom}</td><td>${b.nom}</td><td>${b.email}</td><td style="text-align:center">${emailBadge}</td><td style="text-align:center">${reponseBadge}</td></tr>`;
     });
 
     html += '</tbody></table></div>';
@@ -986,8 +1061,7 @@ async function relancerBacker(ref) {
   if (!backer) { alert('Backer non trouvé dans les liens générés.'); return; }
   if (!confirm(`Renvoyer un email à ${backer.prenom} ${backer.nom} (${backer.email}) ?`)) return;
 
-  const subject = document.getElementById('email-subject')?.value || `Choisissez votre mode de livraison - ${editeur}`;
-  const body    = document.getElementById('email-body')?.value    || '';
+  const { subject, body } = getMailTemplate('relance');
 
   try {
     const r = await fetch('/api/send-emails', {
@@ -1005,6 +1079,50 @@ async function relancerBacker(ref) {
   } catch (err) {
     alert('Erreur : ' + err.message);
   }
+}
+
+// ─── ONGLET MAIL ────────────────────────────────────────────────
+const MAIL_DEFAULTS = {
+  initial: {
+    subject: (editeur) => `Choisissez votre mode de livraison - ${editeur}`,
+    body: () => `Bonjour {prenom},\n\nVotre commande est prête à être expédiée.\nCliquez sur le lien ci-dessous pour choisir votre mode de livraison :\n\n{lien}\n\nCordialement,\nL'équipe {editeur} / Neoludis`,
+  },
+  relance: {
+    subject: (editeur) => `Rappel : choisissez votre mode de livraison - ${editeur}`,
+    body: () => `Bonjour {prenom},\n\nNous n'avons pas encore reçu votre choix de livraison.\nVotre commande est prête à partir — il ne vous reste plus qu'à indiquer comment vous souhaitez la recevoir :\n\n{lien}\n\nN'hésitez pas à nous contacter si vous avez la moindre question.\n\nCordialement,\nL'équipe {editeur} / Neoludis`,
+  },
+};
+
+function initMailTemplates() {
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || 'Neoludis';
+  ['initial','relance'].forEach(type => {
+    const subjectEl = document.getElementById(`mail-${type}-subject`);
+    const bodyEl    = document.getElementById(`mail-${type}-body`);
+    if (subjectEl && !subjectEl.value) subjectEl.value = MAIL_DEFAULTS[type].subject(editeur);
+    if (bodyEl    && !bodyEl.value)    bodyEl.value    = MAIL_DEFAULTS[type].body();
+  });
+}
+
+function getMailTemplate(type) {
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || 'Neoludis';
+  return {
+    subject: document.getElementById(`mail-${type}-subject`)?.value || MAIL_DEFAULTS[type].subject(editeur),
+    body:    document.getElementById(`mail-${type}-body`)?.value    || MAIL_DEFAULTS[type].body(),
+  };
+}
+
+function aperçuMail(type) {
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || 'Neoludis';
+  const tpl     = getMailTemplate(type);
+  const exemple = { prenom: 'Georges', lien: 'https://neoludis-relais.vercel.app/...' };
+  const replace = str => str
+    .replace(/{prenom}/g,  exemple.prenom)
+    .replace(/{editeur}/g, editeur)
+    .replace(/{lien}/g,    exemple.lien);
+
+  document.getElementById(`preview-${type}-subject`).textContent = replace(tpl.subject);
+  document.getElementById(`preview-${type}-body`).textContent    = replace(tpl.body);
+  document.getElementById(`preview-${type}`).style.display       = 'block';
 }
 
 function aperçuEmail() {
