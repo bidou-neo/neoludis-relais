@@ -496,6 +496,7 @@ if (window.location.search.includes('admin')) {
       adminEditeur = editeurParam;
       document.getElementById('form-section').style.display = 'none';
       document.getElementById('admin-panel').style.display = 'block';
+      initMailTemplates(); // initialiser les templates dès l'ouverture
       renderAdminTable();
     } else {
       alert('Mot de passe incorrect.');
