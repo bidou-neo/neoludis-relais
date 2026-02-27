@@ -904,8 +904,14 @@ async function exporterDropbox() {
     if (result.success) {
       statusEl.style.color = '#A8E6C5';
       statusEl.innerHTML = `✅ ${result.nb} commande(s) déposée(s) sur Dropbox — <strong>${result.filename}</strong>${result.lien ? ' — <a href="' + result.lien + '" target="_blank" style="color:#A8E6C5">Télécharger</a>' : ''}`;
-      // Marquer les lignes comme "en cours de traitement" dans le Sheet
-      // (à implémenter avec update-status.js)
+      // Marquer les commandes comme "En cours de traitement"
+      if (result.refs?.length) {
+        fetch('/api/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ editeur: adminEditeur || 'Neoludis', refs: result.refs, statut: 'En cours' }),
+        }).catch(() => {});
+      }
     } else {
       statusEl.style.color = '#FFB3B3';
       statusEl.textContent = '❌ Erreur : ' + (result.error || 'Inconnue');
@@ -1172,6 +1178,8 @@ async function chargerSuivi() {
     const total      = data.backers.length;
     const envoyes    = data.backers.filter(b => b.email_envoye).length;
     const repondus   = data.backers.filter(b => b.a_repondu).length;
+    const enCours    = data.backers.filter(b => b.statut === 'En cours').length;
+    const expedies   = data.backers.filter(b => b.statut === 'Expédié').length;
     const enAttente  = envoyes - repondus;
 
     // Stats cards
@@ -1184,6 +1192,8 @@ async function chargerSuivi() {
       statCard('Backers importés', total,     'var(--bg)') +
       statCard('Emails envoyés',   envoyes,   '#fff8e1') +
       statCard('Ont répondu',      repondus,  '#e8f5e9') +
+      statCard('En cours',         enCours,   '#fff3e0') +
+      statCard('Expédiés',         expedies,  '#e3f2fd') +
       statCard('En attente',       enAttente >= 0 ? enAttente : '—', '#fce4ec');
 
     // Bouton envoyer sélection
@@ -1195,13 +1205,20 @@ async function chargerSuivi() {
 
     // Tableau
     let html = btnSelection + '<div class="admin-table-wrap"><table><thead><tr>' +
-      '<th style="width:32px"></th><th>Réf.</th><th>Prénom</th><th>Nom</th><th>Email</th><th>Email envoyé</th><th>A répondu</th>' +
+      '<th style="width:32px"></th><th>Réf.</th><th>Prénom</th><th>Nom</th><th>Email</th><th>Email envoyé</th><th>A répondu</th><th>Statut</th>' +
       '</tr></thead><tbody>';
 
     data.backers.forEach(b => {
       const emailBadge   = b.email_envoye ? '✅' : '❌';
       const reponseBadge = b.a_repondu    ? '✅' : b.email_envoye ? '⏳' : '—';
-      html += `<tr><td><input type="checkbox" class="backer-check" value="${b.ref}" data-email="${b.email}" data-prenom="${b.prenom}"></td><td>${b.ref}</td><td>${b.prenom}</td><td>${b.nom}</td><td>${b.email}</td><td style="text-align:center">${emailBadge}</td><td style="text-align:center">${reponseBadge}</td></tr>`;
+      const statutBadge  = b.statut === 'Expédié' 
+        ? '<span style="color:#1A7A4A;font-weight:600">🚚 Expédié</span>'
+        : b.statut === 'En cours'
+        ? '<span style="color:#E8431A;font-weight:600">📦 En cours</span>'
+        : b.statut === 'Livré'
+        ? '<span style="color:#1A7A4A;font-weight:600">✅ Livré</span>'
+        : '—';
+      html += `<tr><td><input type="checkbox" class="backer-check" value="${b.ref}" data-email="${b.email}" data-prenom="${b.prenom}"></td><td>${b.ref}</td><td>${b.prenom}</td><td>${b.nom}</td><td>${b.email}</td><td style="text-align:center">${emailBadge}</td><td style="text-align:center">${reponseBadge}</td><td style="text-align:center">${statutBadge}</td></tr>`;
     });
 
     html += '</tbody></table></div>';
