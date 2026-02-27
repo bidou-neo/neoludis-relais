@@ -158,17 +158,45 @@
         <div style="height:14px"></div>
         <div class="form-grid full"><div class="field"><label for="pays">Pays *</label>
           <select id="pays" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:var(--bg);color:var(--ink)">
-            <option value="France" data-code="FR" selected>France</option>
-            <option value="Belgique" data-code="BE">Belgique</option>
-            <option value="Suisse" data-code="CH">Suisse</option>
-            <option value="Luxembourg" data-code="LU">Luxembourg</option>
-            <option value="Allemagne" data-code="DE">Allemagne</option>
-            <option value="Espagne" data-code="ES">Espagne</option>
-            <option value="Italie" data-code="IT">Italie</option>
-            <option value="Pays-Bas" data-code="NL">Pays-Bas</option>
-            <option value="Portugal" data-code="PT">Portugal</option>
-            <option value="Royaume-Uni" data-code="GB">Royaume-Uni</option>
-            <option value="Canada" data-code="CA">Canada</option>
+            <optgroup label="France">
+              <option value="France" data-code="FR" selected>France métropolitaine</option>
+              <option value="Guadeloupe" data-code="GP">Guadeloupe (971)</option>
+              <option value="Martinique" data-code="MQ">Martinique (972)</option>
+              <option value="Guyane" data-code="GF">Guyane (973)</option>
+              <option value="La Réunion" data-code="RE">La Réunion (974)</option>
+              <option value="Mayotte" data-code="YT">Mayotte (976)</option>
+              <option value="Saint-Pierre-et-Miquelon" data-code="PM">Saint-Pierre-et-Miquelon</option>
+              <option value="Saint-Barthélemy" data-code="BL">Saint-Barthélemy</option>
+              <option value="Saint-Martin" data-code="MF">Saint-Martin</option>
+              <option value="Wallis-et-Futuna" data-code="WF">Wallis-et-Futuna</option>
+              <option value="Polynésie française" data-code="PF">Polynésie française</option>
+              <option value="Nouvelle-Calédonie" data-code="NC">Nouvelle-Calédonie</option>
+            </optgroup>
+            <optgroup label="Europe">
+              <option value="Allemagne" data-code="DE">Allemagne</option>
+              <option value="Autriche" data-code="AT">Autriche</option>
+              <option value="Belgique" data-code="BE">Belgique</option>
+              <option value="Danemark" data-code="DK">Danemark</option>
+              <option value="Espagne" data-code="ES">Espagne</option>
+              <option value="Finlande" data-code="FI">Finlande</option>
+              <option value="Grèce" data-code="GR">Grèce</option>
+              <option value="Irlande" data-code="IE">Irlande</option>
+              <option value="Italie" data-code="IT">Italie</option>
+              <option value="Luxembourg" data-code="LU">Luxembourg</option>
+              <option value="Pays-Bas" data-code="NL">Pays-Bas</option>
+              <option value="Pologne" data-code="PL">Pologne</option>
+              <option value="Portugal" data-code="PT">Portugal</option>
+              <option value="Royaume-Uni" data-code="GB">Royaume-Uni</option>
+              <option value="Suède" data-code="SE">Suède</option>
+              <option value="Suisse" data-code="CH">Suisse</option>
+            </optgroup>
+            <optgroup label="Amérique du Nord">
+              <option value="Canada" data-code="CA">Canada</option>
+              <option value="États-Unis" data-code="US">États-Unis</option>
+            </optgroup>
+            <optgroup label="Autre">
+              <option value="Autre" data-code="XX">Autre</option>
+            </optgroup>
           </select>
         </div></div>
       </div>
@@ -798,8 +826,8 @@ function downloadCSV() {
       '',                                          // Société
       row.nom            || '',
       row.prenom         || '',
-      isRelais ? (row.relay_nom || '') : (row.relay_adresse  || ''),  // Adresse 1
-      isRelais ? (row.relay_adresse || '') : (row.relay_adresse2 || ''),  // Adresse 2
+      isRelais ? (row.relay_adresse || '') : (row.relay_adresse  || ''),  // Adresse 1
+      isRelais ? '' : (row.relay_adresse2 || ''),  // Adresse 2
       '',                                          // Adresse 3
       row.relay_codepostal || '',
       row.relay_ville    || '',
