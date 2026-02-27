@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     // 1. Récupérer les backers (onglet Backers)
     // Colonnes : A=Éditeur | B=Ref | C=Email | D=Prénom | E=Nom | F=Téléphone | G=Email_envoyé
     const backersRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Backers!A:G`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Backers!A:H`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const backersData = await backersRes.json();
@@ -47,6 +47,7 @@ export default async function handler(req, res) {
       nom:           r[4] || '',
       email_envoye:  (r[6]||'').toLowerCase() === 'oui',
       a_repondu:     refsRepondus.has(String(r[1]||'').toLowerCase()),
+      statut:        r[7] || '',
     }));
 
     return res.status(200).json({ success: true, backers });
