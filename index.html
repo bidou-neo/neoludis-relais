@@ -403,7 +403,7 @@
     container.style.visibility = 'visible';
 
     // Essayer SVG → PNG → JPG
-    const extensions = ['svg', 'png', 'jpg', 'gif'];
+    const extensions = ['gif', 'svg', 'png', 'jpg'];
     let idx = 0;
     function tryNext() {
       if (idx >= extensions.length) return;
@@ -1107,9 +1107,11 @@ function initMailTemplates() {
 
 function getMailTemplate(type) {
   const editeur = new URLSearchParams(window.location.search).get('editeur') || 'Neoludis';
+  const subjectVal = document.getElementById(`mail-${type}-subject`)?.value?.trim();
+  const bodyVal    = document.getElementById(`mail-${type}-body`)?.value?.trim();
   return {
-    subject: document.getElementById(`mail-${type}-subject`)?.value || MAIL_DEFAULTS[type].subject(editeur),
-    body:    document.getElementById(`mail-${type}-body`)?.value    || MAIL_DEFAULTS[type].body(),
+    subject: subjectVal || MAIL_DEFAULTS[type].subject(editeur),
+    body:    bodyVal    || MAIL_DEFAULTS[type].body(),
   };
 }
 
