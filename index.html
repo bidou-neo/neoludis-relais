@@ -1284,13 +1284,23 @@ const MAIL_DEFAULTS = {
   },
 };
 
-function initMailTemplates() {
+function initMailTemplates(forceRefresh) {
   const editeur = new URLSearchParams(window.location.search).get('editeur') || 'Neoludis';
   ['initial','relance'].forEach(type => {
     const subjectEl = document.getElementById(`mail-${type}-subject`);
     const bodyEl    = document.getElementById(`mail-${type}-body`);
-    if (subjectEl && !subjectEl.value) subjectEl.value = MAIL_DEFAULTS[type].subject(editeur);
-    if (bodyEl    && !bodyEl.value)    bodyEl.value    = MAIL_DEFAULTS[type].body();
+    // forceRefresh : on recharge si la valeur correspond à un template par défaut (FR ou EN)
+    // sinon (utilisateur a personnalisé) on ne touche pas
+    const defaultSubjectFR = TRANSLATIONS.fr[`email_${type}_subject`]?.replace('{editeur}', editeur);
+    const defaultSubjectEN = TRANSLATIONS.en[`email_${type}_subject`]?.replace('{editeur}', editeur);
+    const defaultBodyFR    = TRANSLATIONS.fr[`email_${type}_body`];
+    const defaultBodyEN    = TRANSLATIONS.en[`email_${type}_body`];
+
+    const isDefaultSubject = !subjectEl?.value || subjectEl.value === defaultSubjectFR || subjectEl.value === defaultSubjectEN;
+    const isDefaultBody    = !bodyEl?.value    || bodyEl.value === defaultBodyFR       || bodyEl.value === defaultBodyEN;
+
+    if (subjectEl && (isDefaultSubject || forceRefresh)) subjectEl.value = MAIL_DEFAULTS[type].subject(editeur);
+    if (bodyEl    && (isDefaultBody    || forceRefresh)) bodyEl.value    = MAIL_DEFAULTS[type].body();
   });
 }
 
