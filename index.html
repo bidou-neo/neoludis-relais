@@ -272,10 +272,14 @@
 
         <!-- Résultat -->
         <div id="import-result" style="display:none;margin-top:24px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:gap">
             <span style="font-weight:600" id="import-count"></span>
-            <button class="btn btn-primary" onclick="downloadLiens()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ Télécharger CSV liens</button>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" onclick="downloadLiens()" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0">⬇ CSV liens</button>
+              <button onclick="envoyerEmails()" id="btn-send-emails" style="width:auto;padding:8px 16px;font-size:0.82rem;margin:0;background:#1a1a1a;color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;">✉ Envoyer les emails</button>
+            </div>
           </div>
+          <div id="send-status" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
           <div class="admin-table-wrap" style="max-height:400px">
             <table id="import-table"></table>
           </div>
@@ -307,7 +311,7 @@
       'D_ART':       { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       'Antre_monde': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       'Tiki':        { fond: '#ffffff', filtre: 'none',                       choix: false },
-      'dentrobat':   { fond: '#1a1a1a', filtre: 'none',                       choix: true  },
+      'dentrobat':   { fond: '#ffffff', filtre: 'none',                       choix: true  },
       // Ajouter ici les prochains éditeurs
     };
 
@@ -795,6 +799,39 @@ function genererLiens() {
   html += '</tbody>';
   document.getElementById('import-table').innerHTML = html;
   document.getElementById('import-result').style.display = 'block';
+}
+
+async function envoyerEmails() {
+  if (!window._liensGeneres || !window._liensGeneres.length) return;
+
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  const nb = window._liensGeneres.filter(b => b.email).length;
+
+  if (!confirm(`Envoyer ${nb} email(s) aux backers de ${editeur} ?`)) return;
+
+  const btn = document.getElementById('btn-send-emails');
+  const status = document.getElementById('send-status');
+  btn.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,0.4);border-top-color:white"></span> Envoi en cours…';
+  btn.disabled = true;
+  status.style.display = 'block';
+  status.textContent = 'Envoi en cours, merci de patienter…';
+
+  try {
+    const r = await fetch('/api/send-emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editeur, backers: window._liensGeneres }),
+    });
+    const data = await r.json();
+
+    status.textContent = `✅ ${data.envoyes} email(s) envoyé(s)${data.erreurs ? ' — ⚠️ ' + data.erreurs + ' erreur(s)' : ''}`;
+    btn.innerHTML = '✉ Envoyer les emails';
+    btn.disabled = false;
+  } catch (err) {
+    status.textContent = '❌ Erreur lors de l\'envoi : ' + err.message;
+    btn.innerHTML = '✉ Envoyer les emails';
+    btn.disabled = false;
+  }
 }
 
 function downloadLiens() {
