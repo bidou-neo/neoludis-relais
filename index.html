@@ -311,7 +311,7 @@
       'D_ART':       { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       'Antre_monde': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       'Tiki':        { fond: '#ffffff', filtre: 'none',                       choix: false },
-      'dentrobat':   { fond: '#ffffff', filtre: 'none',                       choix: true  },
+      'dendrobat':   { fond: '#ffffff', filtre: 'none',                       choix: true  },
       // Ajouter ici les prochains éditeurs
     };
 
@@ -399,7 +399,7 @@ function choisirLivraison(mode) {
 // ─── CONFIG MOTS DE PASSE ADMIN PAR ÉDITEUR ───────────────────────
 const ADMIN_PASSWORDS = {
   '':            'Neoludis2024!',   // admin global (toutes les réponses)
-  'dentrobat':   'Dentrobat2024!',
+  'dendrobat':   'Dendrobat2024!',
   'D_ART':       'DART2024!',
   'Antre_monde': 'AntreMonde2024!',
   'Tiki':        'Tiki2024!',
@@ -751,7 +751,7 @@ function genererLiens() {
   const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
   const baseUrl = window.location.origin + '/?editeur=' + encodeURIComponent(editeur);
   // Récupérer choix depuis la config éditeur
-  const configEditeurs = { 'dentrobat': true }; // même liste que CONFIG ci-dessus
+  const configEditeurs = { 'dendrobat': true }; // même liste que CONFIG ci-dessus
   const avecChoix = configEditeurs[editeur] || new URLSearchParams(window.location.search).get('choix') === '1';
   const choix = avecChoix ? '&choix=1' : '';
 
