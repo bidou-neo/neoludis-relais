@@ -59,8 +59,11 @@ export default async function handler(req, res) {
       body.relay_id || '',
       body.relay_nom || '',
       body.relay_adresse || '',
+      body.relay_adresse2 || '',
       cp,
       body.relay_ville || '',
+      body.relay_pays || 'France',
+      body.relay_pays_code || 'FR',
       body.relay_type || '',
     ];
 
