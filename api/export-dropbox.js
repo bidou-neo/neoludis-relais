@@ -111,7 +111,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ success: true, filename, path: uploadData.path_display, lien: shareLink, nb: rows.length });
+    return res.status(200).json({ success: true, filename, path: uploadData.path_display, lien: shareLink, nb: rows.length, refs: rows.map(r => r.commande).filter(Boolean) });
 
   } catch (err) {
     console.error('export-dropbox error:', err);
