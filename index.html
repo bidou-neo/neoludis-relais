@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Choisir mon point relais — Neoludis</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="/i18n.js"></script>
 <style>
   :root {
     --bg: #F5F2EC; --surface: #fff; --ink: #1A1A1A; --ink-muted: #6B6B6B;
@@ -96,28 +97,31 @@
   <div>
     <div class="logo" id="logo-container" style="visibility:hidden">Neo<span>ludis</span></div>
   </div>
+  <div style="display:flex;gap:4px;align-items:center">
+    <button class="lang-btn active" data-lang="fr" onclick="setLang('fr')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.8rem;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600">FR</button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.8rem;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600">EN</button>
+  </div>
 </header>
 <main>
   <div id="form-section">
     <!-- Étape 0 : Choix mode livraison (optionnel, activé avec ?choix=1) -->
     <div class="card" id="step0-card">
-      <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection du mode de livraison</p>
+      <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;" data-i18n="step0_title">Sélection du mode de livraison</p>
       <div id="welcome-msg" style="display:none;font-size:1.1rem;color:var(--ink-muted);margin-bottom:8px;font-weight:300"></div>
-      <h1>Comment souhaitez-vous être livré ?</h1>
-      <p class="subtitle">Choisissez votre mode de livraison préféré.</p>
+      <h1 data-i18n="step0_title">Comment souhaitez-vous être livré ?</h1>
       <div class="choix-livraison">
         <button class="choix-btn principal" onclick="choisirLivraison('relais')">
           <span class="choix-icon">📦</span>
           <div class="choix-text">
-            <h3>Point relais Colissimo</h3>
-            <p>Je choisis un point de retrait près de chez moi</p>
+            <h3 data-i18n="step0_relais_title">Point relais Colissimo</h3>
+            <p data-i18n="step0_relais_desc">Je choisis un point de retrait près de chez moi</p>
           </div>
         </button>
         <button class="choix-btn secondaire" onclick="choisirLivraison('domicile')">
           <span class="choix-icon">🏠</span>
           <div class="choix-text">
-            <h3>Livraison à domicile</h3>
-            <p>Je reçois mon colis à mon adresse</p>
+            <h3 data-i18n="step0_domicile_title">Livraison à domicile</h3>
+            <p data-i18n="step0_domicile_desc">Je reçois mon colis à mon adresse</p>
           </div>
         </button>
       </div>
@@ -127,38 +131,38 @@
     <div class="card" id="step1-card">
       <div id="btn-retour-choix" style="display:none;margin-bottom:16px">
         <button onclick="retourChoix()" style="background:none;border:none;cursor:pointer;color:var(--ink-muted);font-size:0.88rem;padding:0;display:flex;align-items:center;gap:6px;">
-          ← Modifier mon choix de livraison
+          <span data-i18n="step1_back">← Modifier mon choix de livraison</span>
         </button>
       </div>
       <div class="steps-indicator"><div class="step-dot active"></div><div class="step-dot"></div></div>
-      <p id="titre-page" style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection de point relais Colissimo</p>
+      <p id="titre-page" style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;" data-i18n="step1_title_relais">Sélection de point relais Colissimo</p>
       <div class="step-badge" id="badge-etape">① Étape 1 / 2</div>
-      <h1>Vos coordonnées</h1>
-      <p class="subtitle">Ces informations nous permettront d'imprimer votre étiquette de livraison.</p>
+      <h1 data-i18n="step1_coords">Vos coordonnées</h1>
+      <p class="subtitle" data-i18n="step1_coords_desc">Ces informations nous permettront d'imprimer votre étiquette de livraison.</p>
       <div class="form-grid">
-        <div class="field"><label for="prenom">Prénom *</label><input type="text" id="prenom" placeholder="Jean" autocomplete="given-name"><span class="error-msg" id="err-prenom">Champ requis</span></div>
-        <div class="field"><label for="nom">Nom *</label><input type="text" id="nom" placeholder="Dupont" autocomplete="family-name"><span class="error-msg" id="err-nom">Champ requis</span></div>
+        <div class="field"><label for="prenom" data-i18n="label_prenom">Prénom *</label><input type="text" id="prenom" data-i18n-placeholder="placeholder_prenom" placeholder="Jean" autocomplete="given-name"><span class="error-msg" id="err-prenom" data-i18n="err_required">Champ requis</span></div>
+        <div class="field"><label for="nom" data-i18n="label_nom">Nom *</label><input type="text" id="nom" data-i18n-placeholder="placeholder_nom" placeholder="Dupont" autocomplete="family-name"><span class="error-msg" id="err-nom" data-i18n="err_required">Champ requis</span></div>
       </div>
       <div style="height:14px"></div>
-      <div class="form-grid full"><div class="field"><label for="email">Email *</label><input type="email" id="email" placeholder="jean.dupont@email.com"><span class="error-msg" id="err-email">Email invalide</span></div></div>
+      <div class="form-grid full"><div class="field"><label for="email" data-i18n="label_email">Email *</label><input type="email" id="email" data-i18n-placeholder="placeholder_email" placeholder="jean.dupont@email.com"><span class="error-msg" id="err-email" data-i18n="err_email">Email invalide</span></div></div>
       <div style="height:14px"></div>
-      <div class="form-grid full"><div class="field"><label for="telephone">Téléphone <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="tel" id="telephone" placeholder="06 12 34 56 78"></div></div>
+      <div class="form-grid full"><div class="field"><label for="telephone"><span data-i18n="label_telephone">Téléphone</span> <span style="font-weight:300;text-transform:none" data-i18n="label_adresse2_hint">(optionnel)</span></label><input type="tel" id="telephone" data-i18n-placeholder="placeholder_telephone" placeholder="06 12 34 56 78"></div></div>
       <div style="height:14px"></div>
-      <div class="form-grid full"><div class="field"><label for="commande">Numéro de commande *</label><input type="text" id="commande" placeholder="Ex : CMD-2024-001"><span class="error-msg" id="err-commande">Champ requis</span></div></div>
+      <div class="form-grid full"><div class="field"><label for="commande" data-i18n="label_commande">Numéro de commande *</label><input type="text" id="commande" data-i18n-placeholder="placeholder_commande" placeholder="Ex : CMD-2024-001"><span class="error-msg" id="err-commande" data-i18n="err_required">Champ requis</span></div></div>
 
       <!-- Champs adresse (affichés uniquement si livraison domicile) -->
       <div id="adresse-fields" style="display:none">
         <div style="height:14px"></div>
-        <div class="form-grid full"><div class="field"><label for="adresse1">Adresse *</label><input type="text" id="adresse1" placeholder="12 rue de la Paix" autocomplete="street-address"><span class="error-msg" id="err-adresse1">Champ requis</span></div></div>
+        <div class="form-grid full"><div class="field"><label for="adresse1" data-i18n="label_adresse1">Adresse *</label><input type="text" id="adresse1" data-i18n-placeholder="placeholder_adresse1" placeholder="12 rue de la Paix" autocomplete="street-address"><span class="error-msg" id="err-adresse1" data-i18n="err_required">Champ requis</span></div></div>
         <div style="height:14px"></div>
-        <div class="form-grid full"><div class="field"><label for="adresse2">Complément d'adresse <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="text" id="adresse2" placeholder="Bâtiment A, lieu-dit..." autocomplete="address-line2"></div></div>
+        <div class="form-grid full"><div class="field"><label for="adresse2"><span data-i18n="label_adresse2">Complément d'adresse</span> <span style="font-weight:300;text-transform:none" data-i18n="label_adresse2_hint">(optionnel)</span></label><input type="text" id="adresse2" data-i18n-placeholder="placeholder_adresse2" placeholder="Bâtiment A, lieu-dit..." autocomplete="address-line2"></div></div>
         <div style="height:14px"></div>
-        <div class="form-grid"><div class="field"><label for="codepostal">Code postal *</label><input type="text" id="codepostal" placeholder="75001" autocomplete="postal-code"><span class="error-msg" id="err-codepostal">Champ requis</span></div>
-        <div class="field"><label for="ville">Ville *</label><input type="text" id="ville" placeholder="Paris" autocomplete="address-level2"><span class="error-msg" id="err-ville">Champ requis</span></div></div>
+        <div class="form-grid"><div class="field"><label for="codepostal" data-i18n="label_codepostal">Code postal *</label><input type="text" id="codepostal" data-i18n-placeholder="placeholder_codepostal" placeholder="75001" autocomplete="postal-code"><span class="error-msg" id="err-codepostal" data-i18n="err_required">Champ requis</span></div>
+        <div class="field"><label for="ville" data-i18n="label_ville">Ville *</label><input type="text" id="ville" data-i18n-placeholder="placeholder_ville" placeholder="Paris" autocomplete="address-level2"><span class="error-msg" id="err-ville" data-i18n="err_required">Champ requis</span></div></div>
         <div style="height:14px"></div>
-        <div class="form-grid full"><div class="field"><label for="pays">Pays *</label>
+        <div class="form-grid full"><div class="field"><label for="pays" data-i18n="label_pays">Pays *</label>
           <select id="pays" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.95rem;background:var(--bg);color:var(--ink)">
-            <optgroup label="France">
+            <optgroup data-i18n-label="country_group_france" label="France">
               <option value="France" data-code="FR" selected>France métropolitaine</option>
               <option value="Guadeloupe" data-code="GP">Guadeloupe (971)</option>
               <option value="Martinique" data-code="MQ">Martinique (972)</option>
@@ -172,7 +176,7 @@
               <option value="Polynésie française" data-code="PF">Polynésie française</option>
               <option value="Nouvelle-Calédonie" data-code="NC">Nouvelle-Calédonie</option>
             </optgroup>
-            <optgroup label="Europe">
+            <optgroup data-i18n-label="country_group_europe" label="Europe">
               <option value="Allemagne" data-code="DE">Allemagne</option>
               <option value="Autriche" data-code="AT">Autriche</option>
               <option value="Belgique" data-code="BE">Belgique</option>
@@ -190,29 +194,28 @@
               <option value="Suède" data-code="SE">Suède</option>
               <option value="Suisse" data-code="CH">Suisse</option>
             </optgroup>
-            <optgroup label="Amérique du Nord">
+            <optgroup data-i18n-label="country_group_namerica" label="Amérique du Nord">
               <option value="Canada" data-code="CA">Canada</option>
               <option value="États-Unis" data-code="US">États-Unis</option>
             </optgroup>
-            <optgroup label="Autre">
-              <option value="Autre" data-code="XX">Autre</option>
+            <optgroup data-i18n-label="country_group_other" label="Autre">
+              <option value="Autre" data-code="XX" data-i18n="country_other">Autre</option>
             </optgroup>
           </select>
         </div></div>
       </div>
-      <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px" id="btn-step2">Choisir mon point relais →</button>
+      <button class="btn btn-primary" onclick="goToStep2()" style="margin-top:24px" id="btn-step2" data-i18n="btn_next_relais">Choisir mon point relais →</button>
     </div>
 
     <!-- Étape 2 -->
     <div class="card" id="step2-card" style="display:none">
       <div class="steps-indicator"><div class="step-dot done"></div><div class="step-dot active"></div></div>
-      <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;">Sélection de point relais Colissimo</p>
+      <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;" data-i18n="step1_title_relais">Sélection de point relais Colissimo</p>
       <div class="step-badge">② Étape 2 / 2</div>
-      <h1>Votre point relais</h1>
-      <p class="subtitle">Recherchez et sélectionnez votre point relais Colissimo le plus proche.</p>
+      <h1 data-i18n="step2_title">Votre point relais</h1>
 
       <div id="widget-container">
-        <div id="loading-widget"><span class="spinner-dark"></span> Chargement du widget…</div>
+        <div id="loading-widget"><span class="spinner-dark"></span> <span data-i18n="step2_loading">Chargement du widget…</span></div>
       </div>
 
       <div id="selected-relay">
@@ -221,18 +224,18 @@
         <div class="relay-id-big" id="relay-id-display"></div>
       </div>
 
-      <button class="btn btn-primary" id="btn-valider" onclick="submitForm()" style="margin-top:20px" disabled>✓ Valider ma sélection</button>
-      <button class="btn" onclick="backToStep1()" style="background:transparent;color:var(--ink-muted);box-shadow:none;font-weight:400;font-size:0.9rem">← Retour</button>
+      <button class="btn btn-primary" id="btn-valider" onclick="submitForm()" style="margin-top:20px" disabled data-i18n="btn_validate">✓ Valider ma sélection</button>
+      <button class="btn" onclick="backToStep1()" style="background:transparent;color:var(--ink-muted);box-shadow:none;font-weight:400;font-size:0.9rem" data-i18n="btn_back">← Retour</button>
     </div>
 
     <!-- Confirmation -->
     <div class="card" id="success-card">
       <div id="success-screen">
         <div class="big-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <h2>Merci !</h2>
-        <p>Votre choix de point relais a bien été enregistré.<br>Vous recevrez votre commande à l'adresse sélectionnée.</p>
+        <h2 data-i18n="confirm_title">Merci !</h2>
+        <p id="confirm-text" data-i18n="confirm_relais">Votre choix de point relais a bien été enregistré.<br>Vous recevrez votre commande à l'adresse sélectionnée.</p>
         <div style="margin-top:20px;padding:16px;background:var(--bg);border-radius:8px;text-align:left">
-          <div style="font-size:0.78rem;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:8px">Récapitulatif</div>
+          <div style="font-size:0.78rem;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:8px" data-i18n="confirm_recap">Récapitulatif</div>
           <div id="summary-content" style="font-size:0.9rem;line-height:1.8"></div>
         </div>
       </div>
@@ -242,10 +245,10 @@
     <div class="card" id="already-registered-card" style="display:none">
       <div style="text-align:center;padding:16px 0">
         <div style="width:72px;height:72px;background:#FFF3CD;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:2px solid #FFD97D;font-size:2rem">⚠️</div>
-        <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:12px;color:var(--ink)">Choix déjà enregistré</h2>
+        <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:12px;color:var(--ink)" data-i18n="already_title">Choix déjà enregistré</h2>
         <p style="color:var(--ink-muted);font-size:0.95rem;line-height:1.7;max-width:420px;margin:0 auto">
-          Un choix de livraison a déjà été enregistré pour cette commande.<br><br>
-          Pour toute modification, veuillez contacter <strong id="already-editeur"></strong>.
+          <span data-i18n="already_text">Un choix de livraison a déjà été enregistré pour cette commande.</span><br><br>
+          <span data-i18n="already_contact">Pour toute modification, veuillez contacter</span> <strong id="already-editeur"></strong>.
         </p>
       </div>
     </div>
@@ -257,10 +260,10 @@
 
     <!-- Onglets -->
     <div style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--border)">
-      <button id="tab-reponses" onclick="switchTab('reponses')" style="padding:10px 22px;border:none;background:var(--accent);color:white;font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;">📋 Réponses</button>
-      <button id="tab-mail" onclick="switchTab('mail')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">✉ Mails</button>
-      <button id="tab-import" onclick="switchTab('import')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">📥 Import</button>
-      <button id="tab-suivi" onclick="switchTab('suivi')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">📊 Suivi</button>
+      <button id="tab-reponses" onclick="switchTab('reponses')" style="padding:10px 22px;border:none;background:var(--accent);color:white;font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;" data-i18n="tab_reponses">📋 Réponses</button>
+      <button id="tab-mail" onclick="switchTab('mail')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;" data-i18n="tab_mails">✉ Mails</button>
+      <button id="tab-import" onclick="switchTab('import')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;" data-i18n="tab_import">📥 Import</button>
+      <button id="tab-suivi" onclick="switchTab('suivi')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;" data-i18n="tab_suivi">📊 Suivi</button>
     </div>
 
     <!-- Onglet Réponses -->
@@ -491,7 +494,7 @@ function retourChoix() {
   document.getElementById('step0-card').style.display = 'block';
   // Réinitialiser les champs adresse
   document.getElementById('adresse-fields').style.display = 'none';
-  document.getElementById('btn-step2').textContent = 'Choisir mon point relais →';
+  document.getElementById('btn-step2').textContent = t('btn_next_relais');
   document.getElementById('btn-step2').disabled = false;
 }
 
@@ -507,13 +510,13 @@ function choisirLivraison(mode) {
 
   if (mode === 'domicile') {
     adresseFields.style.display = 'block';
-    btnStep2.textContent = 'Valider mon adresse →';
-    titrePage.textContent = 'Livraison à domicile';
+    btnStep2.textContent = t('btn_next_domicile');
+    titrePage.textContent = t('step1_title_domicile');
     badgeEtape.style.display = 'none';
   } else {
     adresseFields.style.display = 'none';
-    btnStep2.textContent = 'Choisir mon point relais →';
-    titrePage.textContent = 'Sélection de point relais Colissimo';
+    btnStep2.textContent = t('btn_next_relais');
+    titrePage.textContent = t('step1_title_relais');
     badgeEtape.style.display = 'inline-flex';
   }
 }
@@ -536,7 +539,7 @@ if (window.location.search.includes('admin')) {
   const pwdAttendu = ADMIN_PASSWORDS[editeurParam];
 
   if (!pwdAttendu) {
-    alert('Éditeur inconnu ou accès non autorisé.');
+    alert(t('admin_unknown_editeur'));
     window.location.href = '/';
   } else {
     const pwd = prompt(`Mot de passe admin${editeurParam ? ' (' + editeurParam + ')' : ''} :`);
@@ -548,7 +551,7 @@ if (window.location.search.includes('admin')) {
       // Initialiser les templates après que tout le JS soit chargé
       setTimeout(() => initMailTemplates(), 0);
     } else {
-      alert('Mot de passe incorrect.');
+      alert(t('admin_wrong_password'));
       window.location.href = '/';
     }
   }
@@ -598,15 +601,15 @@ function goToStep2() {
     .then(data => {
       if (data.existe) {
         // Commande déjà enregistrée → page bloquante
-        btn.innerHTML = 'Choisir mon point relais →';
+        btn.innerHTML = t('btn_next_relais');
         btn.disabled = false;
         document.getElementById('step1-card').style.display = 'none';
         document.getElementById('already-registered-card').style.display = 'block';
-        document.getElementById('already-editeur').textContent = editeur || 'votre revendeur';
+        document.getElementById('already-editeur').textContent = editeur || t('already_editeur');
       } else {
         // Commande nouvelle → continuer
         if (modeLivraison === 'domicile') {
-          btn.innerHTML = 'Valider mon adresse →';
+          btn.innerHTML = t('btn_next_domicile');
           btn.disabled = false;
           submitForm();
           return;
@@ -619,7 +622,7 @@ function goToStep2() {
     })
     .catch(() => {
       // En cas d'erreur API, on laisse passer (pas bloquant)
-      btn.innerHTML = 'Choisir mon point relais →';
+      btn.innerHTML = t('btn_next_relais');
       btn.disabled = false;
       if (modeLivraison === 'domicile') { submitForm(); return; }
       document.getElementById('step1-card').style.display = 'none';
@@ -633,7 +636,7 @@ function backToStep1() {
   document.getElementById('step2-card').style.display = 'none';
   document.getElementById('step1-card').style.display = 'block';
   const btn = document.getElementById('btn-step2');
-  btn.innerHTML = 'Choisir mon point relais →';
+  btn.innerHTML = t('btn_next_relais');
   btn.disabled = false;
   // Fermer le widget proprement
   try { $('#widget-container').frameColissimoClose(); } catch(e) {}
@@ -646,7 +649,7 @@ async function initWidget() {
     const data = await res.json();
 
     if (!data.token) {
-      document.getElementById('loading-widget').innerHTML = '❌ Erreur d\'authentification. Veuillez réessayer.';
+      document.getElementById('loading-widget').innerHTML = '❌ ' + t('step2_err_auth');
       return;
     }
 
@@ -667,7 +670,7 @@ async function initWidget() {
     });
 
   } catch(err) {
-    document.getElementById('loading-widget').innerHTML = '❌ Erreur de chargement. Veuillez réessayer.';
+    document.getElementById('loading-widget').innerHTML = '❌ ' + t('step2_err_load');
     console.error(err);
   }
 }
@@ -723,6 +726,9 @@ function submitForm() {
   document.getElementById('step1-card').style.display = 'none';
   document.getElementById('step2-card').style.display = 'none';
   document.getElementById('success-card').style.display = 'block';
+  // Texte de confirmation selon mode livraison
+  const confirmTextEl = document.getElementById('confirm-text');
+  if (confirmTextEl) confirmTextEl.innerHTML = t(isDomicile ? 'confirm_domicile' : 'confirm_relais');
   const livraisonHtml = isDomicile
     ? '🏠 Domicile<br><span style="color:var(--ink-muted);font-size:0.85rem">' + record.relay_adresse + (record.relay_adresse2 ? ', ' + record.relay_adresse2 : '') + ', ' + record.relay_codepostal + ' ' + record.relay_ville + ' (' + (record.relay_pays || 'France') + ')</span>'
     : '📦 ' + record.relay_nom + '<br><span style="color:var(--ink-muted);font-size:0.85rem">' + record.relay_adresse + ', ' + record.relay_codepostal + ' ' + record.relay_ville + '</span>';
@@ -795,7 +801,7 @@ function renderAdminTable() {
 async function downloadCSV() {
   let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   if (adminEditeur) data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
-  if (!data.length) { alert('Aucune donnée.'); return; }
+  if (!data.length) { alert(t('no_data')); return; }
 
   const esc = v => '"'+String(v||'').replace(/"/g,'""')+'"';
 
@@ -883,7 +889,7 @@ async function downloadCSV() {
 async function exporterDropbox() {
   let data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   if (adminEditeur) data = data.filter(r => (r.editeur||'').toLowerCase() === adminEditeur.toLowerCase());
-  if (!data.length) { alert('Aucune donnée à exporter.'); return; }
+  if (!data.length) { alert(t('no_data')); return; }
 
   const nb = data.length;
   if (!confirm(`Envoyer ${nb} commande(s) à la logistique via Dropbox ?`)) return;
@@ -923,7 +929,7 @@ async function exporterDropbox() {
 }
 
 function clearResponses() {
-  if (!confirm('Vider toutes les réponses ?')) return;
+  if (!confirm(t('confirm_clear'))) return;
   localStorage.removeItem(STORAGE_KEY); renderAdminTable();
 }
 
@@ -931,6 +937,11 @@ function clearResponses() {
 let importData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Appliquer les traductions au chargement
+  applyTranslations();
+  // Mettre à jour html lang
+  document.documentElement.lang = currentLang;
+
   const fileInput = document.getElementById('import-csv-file');
   if (fileInput) fileInput.addEventListener('change', chargerCSV);
 });
@@ -988,7 +999,7 @@ function genererLiens() {
   const colNom    = document.getElementById('col-nom').value;
   const colTel    = document.getElementById('col-tel') ? document.getElementById('col-tel').value : '';
 
-  if (!colRef) { alert('Veuillez sélectionner la colonne Référence / Backer ID'); return; }
+  if (!colRef) { alert(t('import_col_ref')); return; }
 
   const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
   const baseUrl = window.location.origin + '/?editeur=' + encodeURIComponent(editeur);
@@ -1052,7 +1063,7 @@ function toggleCheckAll(cb) {
 async function envoyerSelection(type) {
   const editeur  = new URLSearchParams(window.location.search).get('editeur') || '';
   const checked  = [...document.querySelectorAll('.backer-check:checked')];
-  if (!checked.length) { alert('Sélectionnez au moins un backer.'); return; }
+  if (!checked.length) { alert(t('no_selection')); return; }
 
   const { subject, body } = getMailTemplate(type);
   const baseUrl = window.location.origin + `/?editeur=${encodeURIComponent(editeur)}&choix=1`;
@@ -1262,12 +1273,12 @@ async function relancerBacker(ref) {
 // ─── ONGLET MAIL ────────────────────────────────────────────────
 const MAIL_DEFAULTS = {
   initial: {
-    subject: (editeur) => `Choisissez votre mode de livraison - ${editeur}`,
-    body: () => `Bonjour {prenom},\n\nVotre commande est prête à être expédiée.\nCliquez sur le lien ci-dessous pour choisir votre mode de livraison :\n\n{lien}\n\nCordialement,\nL'équipe {editeur} / Neoludis`,
+    subject: (editeur) => t('email_initial_subject').replace('{editeur}', editeur),
+    body: () => t('email_initial_body'),
   },
   relance: {
-    subject: (editeur) => `Rappel : choisissez votre mode de livraison - ${editeur}`,
-    body: () => `Bonjour {prenom},\n\nNous n'avons pas encore reçu votre choix de livraison.\nVotre commande est prête à partir — il ne vous reste plus qu'à indiquer comment vous souhaitez la recevoir :\n\n{lien}\n\nN'hésitez pas à nous contacter si vous avez la moindre question.\n\nCordialement,\nL'équipe {editeur} / Neoludis`,
+    subject: (editeur) => t('email_relance_subject').replace('{editeur}', editeur),
+    body: () => t('email_relance_body'),
   },
 };
 
