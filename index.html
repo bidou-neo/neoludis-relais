@@ -1498,11 +1498,19 @@ async function chargerStock() {
         <div style="font-size:0.78rem;color:var(--ink-muted);margin-top:2px">${label}</div>
       </div>`;
 
+    // Stats basées uniquement sur le stock éditeur
+    const articles = data.articles;
+    const statsEdit = {
+      total_refs:  articles.length,
+      en_stock:    articles.filter(a => a.stock_editeur > 0).length,
+      rupture:     articles.filter(a => a.stock_editeur === 0).length,
+      total_stock: articles.reduce((s, a) => s + a.stock_editeur, 0),
+    };
     stats.innerHTML =
-      statCard(t('stock_stat_refs'),       data.stats.total_refs,       'var(--bg)') +
-      statCard(t('stock_stat_in_stock'),   data.stats.refs_en_stock,    '#e8f5e9') +
-      statCard(t('stock_stat_rupture'),    data.stats.refs_rupture,     '#fce4ec') +
-      statCard(t('stock_stat_total_edit'), data.stats.total_stock_edit, '#e3f2fd');
+      statCard(t('stock_stat_refs'),       statsEdit.total_refs,  'var(--bg)') +
+      statCard(t('stock_stat_in_stock'),   statsEdit.en_stock,    '#e8f5e9') +
+      statCard(t('stock_stat_rupture'),    statsEdit.rupture,     '#fce4ec') +
+      statCard(t('stock_stat_total_edit'), statsEdit.total_stock, '#e3f2fd');
 
     // Mise à jour
     const dateAffichee = data.fileDate
@@ -1518,6 +1526,27 @@ async function chargerStock() {
   }
 }
 
+let _sortCol = null;
+let _sortAsc = true;
+
+function sortStock(col) {
+  if (_sortCol === col) { _sortAsc = !_sortAsc; } else { _sortCol = col; _sortAsc = true; }
+  const q = document.getElementById('stock-search')?.value?.toLowerCase() || '';
+  let data = q
+    ? _stockData.filter(a =>
+        a.ref_neoludis?.toLowerCase().includes(q) ||
+        a.ref_editeur?.toLowerCase().includes(q) ||
+        a.designation?.toLowerCase().includes(q) ||
+        a.ean?.toLowerCase().includes(q))
+    : [..._stockData];
+  data.sort((a, b) => {
+    let va = a[col] ?? ''; let vb = b[col] ?? '';
+    if (typeof va === 'number') return _sortAsc ? va - vb : vb - va;
+    return _sortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+  renderStockTable(data);
+}
+
 function renderStockTable(articles) {
   const content = document.getElementById('stock-content');
   if (!articles.length) {
@@ -1528,15 +1557,19 @@ function renderStockTable(articles) {
   const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
   const isLuckyDuck = editeur.toLowerCase() === 'lucky duck games';
 
+  const thStyle = 'cursor:pointer;user-select:none;';
+  const arrow = (col) => _sortCol === col ? (_sortAsc ? ' ▲' : ' ▼') : '';
+
   let html = `<div class="admin-table-wrap"><table><thead><tr>
     ${isLuckyDuck
-      ? `<th>Réf LDG</th><th>Réf Goliath</th>`
-      : `<th>${t('stock_col_ref_edit')}</th>`
+      ? `<th style="${thStyle}" onclick="sortStock('ref_ldg')">Réf LDG${arrow('ref_ldg')}</th>
+         <th style="${thStyle}" onclick="sortStock('ref_goliath')">Réf Goliath${arrow('ref_goliath')}</th>`
+      : `<th style="${thStyle}" onclick="sortStock('ref_editeur')">${t('stock_col_ref_edit')}${arrow('ref_editeur')}</th>`
     }
-    <th>${t('stock_col_ref')}</th>
-    <th>${t('stock_col_design')}</th>
-    <th>${t('stock_col_ean')}</th>
-    <th style="text-align:center">${t('stock_col_stock_edit')}</th>
+    <th style="${thStyle}" onclick="sortStock('ref_neoludis')">${t('stock_col_ref')}${arrow('ref_neoludis')}</th>
+    <th style="${thStyle}" onclick="sortStock('designation')">${t('stock_col_design')}${arrow('designation')}</th>
+    <th style="${thStyle}" onclick="sortStock('ean')">${t('stock_col_ean')}${arrow('ean')}</th>
+    <th style="${thStyle};text-align:center" onclick="sortStock('stock_editeur')">${t('stock_col_stock_edit')}${arrow('stock_editeur')}</th>
   </tr></thead><tbody>`;
 
   articles.forEach(a => {
