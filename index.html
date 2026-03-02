@@ -806,7 +806,7 @@ function submitForm() {
   }
 
   // Récupérer les infos backer depuis le Sheet
-  fetch(`/api/get-backer?editeur=${encodeURIComponent(editeur)}&ref=${encodeURIComponent(ref)}`)
+  fetch(`/api/get-suivi?editeur=${encodeURIComponent(editeur)}&ref=${encodeURIComponent(ref)}`)
     .then(r => r.json())
     .then(data => {
       if (!data.trouve) return;
@@ -1344,7 +1344,7 @@ async function chargerSuivi() {
     const sansColis = data.backers.filter(b => !b.numero_colis && b.statut !== 'Expédié');
     if (sansColis.length > 0) {
       // Appel silencieux à la réconciliation
-      fetch('/api/reconcile-colis', { method: 'POST' })
+      fetch('/api/import-coliship?mode=reconcile', { method: 'POST' })
         .then(r => r.json())
         .then(rec => { if (rec.mis_a_jour > 0) chargerSuivi(); }) // recharger si des colis ont été trouvés
         .catch(() => {});
