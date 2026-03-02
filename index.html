@@ -476,7 +476,10 @@
       'Antre_monde': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       'Tiki':        { fond: '#ffffff', filtre: 'none',                       choix: false },
       'dendrobat':   { fond: '#ffffff', filtre: 'none',                       choix: true  },
-      'Agate':       { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Agate':            { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Origames':         { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Super Meeple':     { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Lucky Duck Games': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       // Ajouter ici les prochains éditeurs
     };
 
@@ -569,7 +572,10 @@ const ADMIN_PASSWORDS = {
   'Antre_monde': 'AntreMonde2024!',
   'Tiki':        'Tiki2024!',
   'neoludis':    'Neoludis2024!',
-  'Agate':       'Agate2024!',
+  'Agate':             'Agate2024!',
+  'Origames':          'Origames2024!',
+  'Super Meeple':      'SuperMeeple2024!',
+  'Lucky Duck Games':  'LuckyDuck2024!',
   'D_ART':       'DART2024!',
   'Antre_monde': 'AntreMonde2024!',
   'Tiki':        'Tiki2024!',
@@ -1499,7 +1505,10 @@ async function chargerStock() {
       statCard(t('stock_stat_total_edit'), data.stats.total_stock_edit, '#e3f2fd');
 
     // Mise à jour
-    lastUpd.textContent = `${t('stock_updated')} ${new Date().toLocaleString('fr-FR')}`;
+    const dateAffichee = data.fileDate
+      ? new Date(data.fileDate).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })
+      : new Date().toLocaleString('fr-FR');
+    lastUpd.textContent = `${t('stock_updated')} ${dateAffichee}`;
 
     renderStockTable(_stockData);
 
@@ -1516,8 +1525,14 @@ function renderStockTable(articles) {
     return;
   }
 
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  const isLuckyDuck = editeur.toLowerCase() === 'lucky duck games';
+
   let html = `<div class="admin-table-wrap"><table><thead><tr>
-    <th>${t('stock_col_ref_edit')}</th>
+    ${isLuckyDuck
+      ? `<th>Réf LDG</th><th>Réf Goliath</th>`
+      : `<th>${t('stock_col_ref_edit')}</th>`
+    }
     <th>${t('stock_col_ref')}</th>
     <th>${t('stock_col_design')}</th>
     <th>${t('stock_col_ean')}</th>
@@ -1529,7 +1544,11 @@ function renderStockTable(articles) {
     const stockColor = stock === 0 ? 'color:#E8431A' : stock < 5 ? 'color:#E8851A' : 'color:#1A7A4A';
 
     html += `<tr>
-      <td style="font-weight:600;font-size:0.85rem">${a.ref_editeur || '—'}</td>
+      ${isLuckyDuck
+        ? `<td style="font-weight:600;font-size:0.85rem">${a.ref_ldg || '—'}</td>
+           <td style="font-weight:600;font-size:0.85rem">${a.ref_goliath || '—'}</td>`
+        : `<td style="font-weight:600;font-size:0.85rem">${a.ref_editeur || '—'}</td>`
+      }
       <td style="color:var(--ink-muted);font-size:0.85rem">${a.ref_neoludis}</td>
       <td>${a.designation}</td>
       <td style="font-size:0.82rem;color:var(--ink-muted)">${a.ean || '—'}</td>
