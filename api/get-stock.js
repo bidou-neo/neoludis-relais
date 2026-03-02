@@ -1,6 +1,5 @@
 // api/get-stock.js
 // Lit stock_site.xlsx depuis Dropbox (généré chaque nuit par le serveur OVH)
-// Remplace la connexion directe SQL Server → plus de problème firewall
 
 const https = require('https');
 
@@ -27,9 +26,16 @@ function downloadFromDropbox(token, path) {
         res.on('end',  () => reject(new Error(`Dropbox HTTP ${res.statusCode}: ${body}`)));
         return;
       }
+      // Récupérer la date de modification depuis les métadonnées Dropbox
+      let fileDate = null;
+      try {
+        const meta = JSON.parse(res.headers['dropbox-api-result'] || '{}');
+        fileDate = meta.client_modified || meta.server_modified || null;
+      } catch(e) {}
+
       const chunks = [];
       res.on('data', c => chunks.push(c));
-      res.on('end',  () => resolve(Buffer.concat(chunks)));
+      res.on('end',  () => resolve({ buffer: Buffer.concat(chunks), fileDate }));
     });
     req.on('error', reject);
     req.end();
@@ -70,7 +76,7 @@ module.exports = async (req, res) => {
 
   try {
     // 1. Télécharger depuis Dropbox
-    const buffer = await downloadFromDropbox(DROPBOX_TOKEN, DROPBOX_PATH);
+    const { buffer, fileDate } = await downloadFromDropbox(DROPBOX_TOKEN, DROPBOX_PATH);
 
     // 2. Parser le xlsx avec SheetJS
     const XLSX = require('xlsx');
@@ -99,7 +105,7 @@ module.exports = async (req, res) => {
       refs_rupture:     articles.filter(a => a.dispo_neoludis === 0 && a.dispo_editeur === 0).length,
     };
 
-    res.json({ success: true, editeur, articles, stats });
+    res.json({ success: true, editeur, articles, stats, fileDate });
 
   } catch (err) {
     console.error('[get-stock] Erreur :', err.message);
