@@ -51,6 +51,8 @@ function normalizeRow(row) {
     ean:              String(row.ean              || '').trim(),
     editeur:          String(row.editeur          || '').trim(),
     ref_editeur:      String(row.ref_editeur      || '').trim(),
+    ref_ldg:          String(row.ref_ldg          || '').trim(),
+    ref_goliath:      String(row.ref_goliath       || '').trim(),
     code_fournisseur: String(row.code_fournisseur || '').trim(),
     stock_neoludis:   n(row.stock_neoludis),
     reserve_neoludis: n(row.reserve_neoludis),
