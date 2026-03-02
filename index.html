@@ -815,7 +815,7 @@ function submitForm() {
     .catch(() => {}); // Non bloquant
 })();
 function switchTab(tab) {
-  ['reponses','mail','import','suivi'].forEach(tabId => {
+  ['reponses','mail','import','suivi','stock'].forEach(tabId => {
     document.getElementById('panel-' + tabId).style.display    = tab === tabId ? 'block' : 'none';
     document.getElementById('tab-'   + tabId).style.background = tab === tabId ? 'var(--accent)' : 'var(--bg)';
     document.getElementById('tab-'   + tabId).style.color      = tab === tabId ? 'white' : 'var(--ink-muted)';
@@ -1450,15 +1450,36 @@ async function chargerStock() {
   const stats   = document.getElementById('stock-stats');
   const lastUpd = document.getElementById('stock-last-update');
 
-  content.innerHTML = `<div class="empty-state">${t('stock_loading')}</div>`;
+  content.innerHTML = `<div class="empty-state"><span class="spinner-dark"></span> Chargement du stock Sage…</div>`;
   stats.innerHTML   = '';
 
+  if (!editeur) {
+    content.innerHTML = `<div class="empty-state">⚠️ Aucun éditeur détecté dans l'URL.<br><small style="color:var(--ink-muted)">Ajoutez <code>?editeur=Agate</code> (ou le nom exact Sage) à l'URL.</small></div>`;
+    return;
+  }
+
   try {
-    const r    = await fetch(`/api/get-stock?editeur=${encodeURIComponent(editeur)}&depot=${depot}`);
+    const url = `/api/get-stock?editeur=${encodeURIComponent(editeur)}&depot=${depot}`;
+    console.log('[Stock] Requête :', url);
+    const r    = await fetch(url);
+
+    if (!r.ok) {
+      const txt = await r.text();
+      console.error('[Stock] Réponse HTTP', r.status, txt);
+      content.innerHTML = `<div class="empty-state">❌ Erreur HTTP ${r.status}<br><small style="color:var(--ink-muted)">${txt}</small></div>`;
+      return;
+    }
+
     const data = await r.json();
+    console.log('[Stock] Réponse API :', data);
 
     if (!data.success) {
-      content.innerHTML = `<div class="empty-state">❌ ${data.error}</div>`;
+      content.innerHTML = `<div class="empty-state">❌ ${data.error}<br><small style="color:var(--ink-muted)">Éditeur recherché : <strong>${editeur}</strong></small></div>`;
+      return;
+    }
+
+    if (!data.articles || data.articles.length === 0) {
+      content.innerHTML = `<div class="empty-state">📭 Aucun article trouvé pour l'éditeur <strong>${editeur}</strong> dans Sage.<br><small style="color:var(--ink-muted)">Vérifiez que le champ <code>Editeur</code> dans Sage correspond exactement (casse incluse).</small></div>`;
       return;
     }
 
@@ -1484,7 +1505,8 @@ async function chargerStock() {
     renderStockTable(_stockData);
 
   } catch (err) {
-    content.innerHTML = `<div class="empty-state">❌ Erreur : ${err.message}</div>`;
+    console.error('[Stock] Exception :', err);
+    content.innerHTML = `<div class="empty-state">❌ Impossible de joindre l'API Sage.<br><small style="color:var(--ink-muted)">${err.message}</small><br><small style="color:var(--ink-muted)">Vérifiez que le serveur Vercel est actif et que les variables d'env SAGE_* sont configurées.</small></div>`;
   }
 }
 
