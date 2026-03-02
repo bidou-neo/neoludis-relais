@@ -5,7 +5,7 @@
 const https = require('https');
 
 const DROPBOX_TOKEN = process.env.DROPBOX_TOKEN;
-const DROPBOX_PATH  = '/Neoludis/Preparation de commandes/stock_site.xlsx';
+const DROPBOX_PATH  = '/Nicolas DELAFORGE/Neoludis/Preparation de commandes/Sources_BL/stock_site.xlsx';
 
 // ── Télécharger le fichier depuis Dropbox ──────────────────
 function downloadFromDropbox(token, path) {
