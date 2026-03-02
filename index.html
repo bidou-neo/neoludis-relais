@@ -1496,7 +1496,6 @@ async function chargerStock() {
       statCard(t('stock_stat_refs'),       data.stats.total_refs,       'var(--bg)') +
       statCard(t('stock_stat_in_stock'),   data.stats.refs_en_stock,    '#e8f5e9') +
       statCard(t('stock_stat_rupture'),    data.stats.refs_rupture,     '#fce4ec') +
-      statCard(t('stock_stat_total_neo'),  data.stats.total_stock_neo,  '#fff8e1') +
       statCard(t('stock_stat_total_edit'), data.stats.total_stock_edit, '#e3f2fd');
 
     // Mise à jour
@@ -1518,30 +1517,26 @@ function renderStockTable(articles) {
   }
 
   let html = `<div class="admin-table-wrap"><table><thead><tr>
-    <th>${t('stock_col_ref')}</th>
     <th>${t('stock_col_ref_edit')}</th>
+    <th>${t('stock_col_ref')}</th>
     <th>${t('stock_col_design')}</th>
     <th>${t('stock_col_ean')}</th>
-    <th style="text-align:center">${t('stock_col_stock_neo')}</th>
     <th style="text-align:center">${t('stock_col_stock_edit')}</th>
     <th style="text-align:center">${t('stock_col_reserve')}</th>
     <th style="text-align:center">${t('stock_col_dispo')}</th>
   </tr></thead><tbody>`;
 
   articles.forEach(a => {
-    const dispoNeo  = a.dispo_neoludis;
-    const dispoEdit = a.dispo_editeur;
-    const dispo     = dispoNeo + dispoEdit;
+    const dispo      = a.dispo_editeur;
     const dispoColor = dispo === 0 ? 'color:#E8431A' : dispo < 5 ? 'color:#E8851A' : 'color:#1A7A4A';
 
     html += `<tr>
-      <td style="font-weight:600;font-size:0.85rem">${a.ref_neoludis}</td>
-      <td style="color:var(--ink-muted);font-size:0.85rem">${a.ref_editeur || '—'}</td>
+      <td style="font-weight:600;font-size:0.85rem">${a.ref_editeur || '—'}</td>
+      <td style="color:var(--ink-muted);font-size:0.85rem">${a.ref_neoludis}</td>
       <td>${a.designation}</td>
       <td style="font-size:0.82rem;color:var(--ink-muted)">${a.ean || '—'}</td>
-      <td style="text-align:center;font-weight:600">${a.stock_neoludis}</td>
       <td style="text-align:center;font-weight:600">${a.stock_editeur}</td>
-      <td style="text-align:center;color:var(--ink-muted)">${a.reserve_neoludis + a.reserve_editeur}</td>
+      <td style="text-align:center;color:var(--ink-muted)">${a.reserve_editeur}</td>
       <td style="text-align:center;font-weight:700;${dispoColor}">${dispo}</td>
     </tr>`;
   });
