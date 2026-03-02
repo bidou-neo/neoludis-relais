@@ -1522,22 +1522,18 @@ function renderStockTable(articles) {
     <th>${t('stock_col_design')}</th>
     <th>${t('stock_col_ean')}</th>
     <th style="text-align:center">${t('stock_col_stock_edit')}</th>
-    <th style="text-align:center">${t('stock_col_reserve')}</th>
-    <th style="text-align:center">${t('stock_col_dispo')}</th>
   </tr></thead><tbody>`;
 
   articles.forEach(a => {
-    const dispo      = a.dispo_editeur;
-    const dispoColor = dispo === 0 ? 'color:#E8431A' : dispo < 5 ? 'color:#E8851A' : 'color:#1A7A4A';
+    const stock      = a.stock_editeur;
+    const stockColor = stock === 0 ? 'color:#E8431A' : stock < 5 ? 'color:#E8851A' : 'color:#1A7A4A';
 
     html += `<tr>
       <td style="font-weight:600;font-size:0.85rem">${a.ref_editeur || '—'}</td>
       <td style="color:var(--ink-muted);font-size:0.85rem">${a.ref_neoludis}</td>
       <td>${a.designation}</td>
       <td style="font-size:0.82rem;color:var(--ink-muted)">${a.ean || '—'}</td>
-      <td style="text-align:center;font-weight:600">${a.stock_editeur}</td>
-      <td style="text-align:center;color:var(--ink-muted)">${a.reserve_editeur}</td>
-      <td style="text-align:center;font-weight:700;${dispoColor}">${dispo}</td>
+      <td style="text-align:center;font-weight:700;${stockColor}">${stock}</td>
     </tr>`;
   });
 
