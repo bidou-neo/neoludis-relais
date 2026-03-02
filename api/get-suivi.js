@@ -1,5 +1,5 @@
 // api/get-suivi.js
-// Retourne la liste des backers avec statut email_envoyé et a_répondu
+// Retourne la liste des backers avec statut email_envoyé, a_répondu, numéro de colis
 // GET ?editeur=dendrobat
 
 import { getAccessToken } from './_google-auth.js';
@@ -16,18 +16,16 @@ export default async function handler(req, res) {
     const token = await getAccessToken('https://www.googleapis.com/auth/spreadsheets.readonly');
     const editeurN = editeur.toLowerCase();
 
-    // 1. Récupérer les backers (onglet Backers)
-    // Colonnes : A=Éditeur | B=Ref | C=Email | D=Prénom | E=Nom | F=Téléphone | G=Email_envoyé
+    // 1. Backers — colonnes A:I (I = NumeroColis)
     const backersRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Backers!A:H`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Backers!A:I`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const backersData = await backersRes.json();
     const backersRows = (backersData.values || []).slice(1)
       .filter(r => (r[0]||'').toLowerCase() === editeurN);
 
-    // 2. Récupérer les réponses (onglet principal - feuille 1)
-    // Colonnes : A=Date | B=Éditeur | C=Commande(=ref) | D=Prénom | E=Nom...
+    // 2. Réponses
     const reponsesRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Feuille%201!A:C`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -39,7 +37,7 @@ export default async function handler(req, res) {
         .map(r => String(r[2]||'').toLowerCase())
     );
 
-    // 3. Croiser les données
+    // 3. Croiser
     const backers = backersRows.map(r => ({
       ref:           r[1] || '',
       email:         r[2] || '',
@@ -48,6 +46,7 @@ export default async function handler(req, res) {
       email_envoye:  (r[6]||'').toLowerCase() === 'oui',
       a_repondu:     refsRepondus.has(String(r[1]||'').toLowerCase()),
       statut:        r[7] || '',
+      numero_colis:  r[8] || '',
     }));
 
     return res.status(200).json({ success: true, backers });
