@@ -1,8 +1,6 @@
 // api/import-coliship.js
-// 1. Lit tous les CSV Coliship dans Dropbox
-// 2. Stocke TOUS les couples ref→colis dans l'onglet "Colis" de Sheets (upsert)
-// 3. Tente le matching avec l'onglet "Backers" → met à jour colonne I + statut H
-// 4. Archive les CSV traités
+// POST              → import des CSV Coliship depuis Dropbox
+// POST ?mode=reconcile → reconciliation depuis l'onglet Colis
 
 import { getAccessToken } from './_google-auth.js';
 
@@ -11,7 +9,6 @@ const DROPBOX_TOKEN   = process.env.DROPBOX_TOKEN;
 const DROPBOX_FOLDER  = '/Neoludis/Preparation de commandes/BtoC/suivi expedition';
 const DROPBOX_ARCHIVE = `${DROPBOX_FOLDER}/Archives`;
 
-// ── Dropbox helpers ─────────────────────────────────────────
 async function dropboxPost(endpoint, body) {
   const res = await fetch(`https://api.dropboxapi.com/2/${endpoint}`, {
     method:  'POST',
@@ -39,18 +36,12 @@ async function downloadFile(path) {
 
 async function moveToArchive(path, name) {
   try {
-    await dropboxPost('files/move_v2', {
-      from_path:  path,
-      to_path:    `${DROPBOX_ARCHIVE}/${name}`,
-      autorename: true,
-    });
+    await dropboxPost('files/move_v2', { from_path: path, to_path: `${DROPBOX_ARCHIVE}/${name}`, autorename: true });
   } catch(e) {
     console.warn(`Archivage échoué pour ${name}:`, e.message);
   }
 }
 
-// ── Parser CSV Coliship ─────────────────────────────────────
-// "ReferenceExpedition";"NomDestinataire";"Prenom";"RaisonSociale";"NumeroColis"
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(Boolean);
   return lines.slice(1).map(line => {
@@ -59,7 +50,6 @@ function parseCSV(text) {
   }).filter(r => r.ref && r.numero);
 }
 
-// ── Sheets : lire un onglet ─────────────────────────────────
 async function sheetsRead(token, range) {
   const res = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}`,
@@ -70,7 +60,6 @@ async function sheetsRead(token, range) {
   return data.values || [];
 }
 
-// ── Sheets : batchUpdate ────────────────────────────────────
 async function sheetsUpdate(token, updates) {
   if (!updates.length) return;
   const res = await fetch(
@@ -85,7 +74,6 @@ async function sheetsUpdate(token, updates) {
   if (data.error) throw new Error(`Sheets update: ${data.error.message}`);
 }
 
-// ── Sheets : append des nouvelles lignes dans onglet Colis ──
 async function sheetsAppend(token, range, rows) {
   if (!rows.length) return;
   const res = await fetch(
@@ -100,112 +88,87 @@ async function sheetsAppend(token, range, rows) {
   if (data.error) throw new Error(`Sheets append: ${data.error.message}`);
 }
 
-// ── Upsert onglet "Colis" ───────────────────────────────────
-// Colonnes : A=ref, B=numero_colis, C=date_import
 async function upsertColisSheet(token, mappings) {
   const existing = await sheetsRead(token, 'Colis!A:B');
-  // Map ref_lower → row index (1-based, skip header)
   const existingMap = new Map();
   existing.forEach((row, i) => {
     if (i === 0) return;
     if (row[0]) existingMap.set(String(row[0]).toLowerCase(), i + 1);
   });
-
   const now     = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
   const updates = [];
   const toAdd   = [];
-
-  for (const [refLower, numero] of mappings) {
-    if (existingMap.has(refLower)) {
-      // Mettre à jour la ligne existante
-      const rowNum = existingMap.get(refLower);
+  for (const [ref, numero] of mappings) {
+    if (existingMap.has(ref)) {
+      const rowNum = existingMap.get(ref);
       updates.push({ range: `Colis!B${rowNum}`, values: [[numero]] });
       updates.push({ range: `Colis!C${rowNum}`, values: [[now]] });
     } else {
-      // Chercher la ref originale (non-lowercased) dans les mappings d'origine
-      toAdd.push([refLower, numero, now]);
+      toAdd.push([ref, numero, now]);
     }
   }
-
   await sheetsUpdate(token, updates);
-  // Ajouter l'entête si l'onglet est vide
-  if (!existing.length) {
-    await sheetsAppend(token, 'Colis!A1', [['ref', 'numero_colis', 'date_import']]);
-  }
+  if (!existing.length) await sheetsAppend(token, 'Colis!A1', [['ref', 'numero_colis', 'date_import']]);
   await sheetsAppend(token, 'Colis!A:A', toAdd);
-
   return { updated: updates.length / 2, added: toAdd.length };
 }
 
-// ── Matching avec onglet Backers ────────────────────────────
 async function matchBackers(token, mappings) {
   const rows    = await sheetsRead(token, 'Backers!A:I');
   const updates = [];
-
   rows.forEach((row, i) => {
     if (i === 0) return;
-    const ref = String(row[1] || '').toLowerCase();
-    if (mappings.has(ref)) {
+    const ref      = String(row[1] || '').toLowerCase();
+    const dejaColis = row[8] && row[8].trim();
+    if (!dejaColis && mappings.has(ref)) {
       updates.push({ range: `Backers!I${i + 1}`, values: [[mappings.get(ref)]] });
       updates.push({ range: `Backers!H${i + 1}`, values: [['Expédié']] });
     }
   });
-
   await sheetsUpdate(token, updates);
   return updates.length / 2;
 }
 
-// ── Handler principal ───────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!DROPBOX_TOKEN) return res.status(500).json({ error: 'DROPBOX_TOKEN manquant' });
+
+  const mode = req.query?.mode || 'import';
 
   try {
     const token = await getAccessToken('https://www.googleapis.com/auth/spreadsheets');
 
-    const mode = req.query?.mode || 'import';
-
-    // ── Mode réconciliation : relire l'onglet Colis et retenter le matching ──
+    // ── Mode réconciliation ──────────────────────────────────
     if (mode === 'reconcile') {
       const colis = await sheetsRead(token, 'Colis!A:B');
       const mappings = new Map();
       colis.forEach((row, i) => {
-        if (i === 0) return; // skip header
+        if (i === 0) return;
         if (row[0] && row[1]) mappings.set(String(row[0]).toLowerCase(), row[1]);
       });
-      if (!mappings.size) {
-        return res.status(200).json({ success: true, mis_a_jour: 0, sans_backer: 0, message: 'Onglet Colis vide.' });
-      }
+      if (!mappings.size) return res.status(200).json({ success: true, mis_a_jour: 0 });
       const mis_a_jour = await matchBackers(token, mappings);
-      return res.status(200).json({ success: true, mis_a_jour, sans_backer: mappings.size - mis_a_jour });
+      return res.status(200).json({ success: true, mis_a_jour });
     }
 
-    // ── Mode import normal ───────────────────────────────────────────────────
+    // ── Mode import normal ───────────────────────────────────
+    if (!DROPBOX_TOKEN) return res.status(500).json({ error: 'DROPBOX_TOKEN manquant' });
+
     const files = await listCSVFiles();
     if (!files.length) {
-      return res.status(200).json({ success: true, message: 'Aucun fichier CSV à traiter', fichiers: 0, mis_a_jour: 0, stockes: 0 });
+      return res.status(200).json({ success: true, fichiers: 0, mis_a_jour: 0, stockes: 0 });
     }
 
-    const mappings = new Map(); // ref_lower → numero
-    const detail   = [];
+    const mappings = new Map();
     for (const file of files) {
       const text = await downloadFile(file.path_lower);
-      const rows = parseCSV(text);
-      rows.forEach(r => mappings.set(r.ref.toLowerCase(), r.numero));
-      detail.push({ nom: file.name, lignes: rows.length });
+      parseCSV(text).forEach(r => mappings.set(r.ref.toLowerCase(), r.numero));
     }
 
-    // Stocker TOUS les colis dans l'onglet "Colis" (upsert)
     const colisResult = await upsertColisSheet(token, mappings);
+    const mis_a_jour  = await matchBackers(token, mappings);
 
-    // Tenter le matching avec Backers
-    const mis_a_jour = await matchBackers(token, mappings);
-
-    // Archiver les CSV
-    for (const file of files) {
-      await moveToArchive(file.path_lower, file.name);
-    }
+    for (const file of files) await moveToArchive(file.path_lower, file.name);
 
     return res.status(200).json({
       success:     true,
@@ -214,7 +177,6 @@ export default async function handler(req, res) {
       stockes:     colisResult.added + colisResult.updated,
       mis_a_jour,
       sans_backer: mappings.size - mis_a_jour,
-      detail,
     });
 
   } catch (err) {
