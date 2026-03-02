@@ -405,6 +405,7 @@
             <button onclick="envoyerTous('non_envoyes')" id="btn-send-all" style="padding:8px 16px;background:#E8431A;color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer" data-i18n="btn_send_all">✉ Envoyer à tous</button>
             <button onclick="envoyerTous('non_repondus')" id="btn-relance-all" style="padding:8px 16px;background:#1a1a1a;color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer" data-i18n="btn_relance_all">🔁 Relancer les non-répondants</button>
             <button onclick="chargerSuivi()" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.82rem;cursor:pointer" data-i18n="btn_refresh">🔄 Actualiser</button>
+
           </div>
         </div>
         <div id="suivi-send-status" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:0.88rem;color:var(--ink-muted)"></div>
@@ -1225,6 +1226,77 @@ async function envoyerTous(mode) {
   }
 }
 
+async function importerColiship() {
+  const btn    = document.getElementById('btn-coliship');
+  const status = document.getElementById('suivi-coliship-status');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Import en cours…';
+  status.style.display = 'none';
+
+  try {
+    const r    = await fetch('/api/import-coliship', { method: 'POST' });
+    const data = await r.json();
+
+    if (!data.success) {
+      status.style.background = '#fce4ec';
+      status.style.borderColor = '#E8431A';
+      status.style.color = '#E8431A';
+      status.textContent = `❌ Erreur : ${data.error}`;
+    } else if (data.fichiers === 0) {
+      status.style.background = '#fff8e1';
+      status.style.borderColor = '#FFD54F';
+      status.style.color = '#795548';
+      status.textContent = `ℹ️ Aucun fichier CSV à traiter dans Dropbox.`;
+    } else {
+      status.style.background = '#EDFAF3';
+      status.style.borderColor = '#A8E6C5';
+      status.style.color = '#1A7A4A';
+      const sansBacker = data.sans_backer > 0
+        ? ` — ⚠️ ${data.sans_backer} réf(s) sans backer (stockées dans onglet Colis).`
+        : '';
+      status.textContent = `✅ ${data.fichiers} fichier(s) — ${data.references} numéros de colis stockés — ${data.mis_a_jour} backer(s) mis à jour.${sansBacker}`;
+      chargerSuivi(); // Rafraîchir le tableau
+    }
+    status.style.display = 'block';
+  } catch (err) {
+    status.style.display = 'block';
+    status.style.background = '#fce4ec';
+    status.style.color = '#E8431A';
+    status.textContent = `❌ Erreur : ${err.message}`;
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '📦 Importer Coliship';
+  }
+}
+
+async function reconcilierColis() {
+  const btn    = document.getElementById('btn-reconcile');
+  const status = document.getElementById('suivi-coliship-status');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Réconciliation…';
+  status.style.display = 'none';
+
+  try {
+    const r    = await fetch('/api/import-coliship?mode=reconcile', { method: 'POST' });
+    const data = await r.json();
+
+    if (!data.success) {
+      status.style.cssText = 'display:block;margin-bottom:12px;padding:10px 14px;background:#fce4ec;border:1px solid #E8431A;border-radius:8px;font-size:0.88rem;color:#E8431A';
+      status.textContent = `❌ Erreur : ${data.error}`;
+    } else {
+      status.style.cssText = 'display:block;margin-bottom:12px;padding:10px 14px;background:#EDFAF3;border:1px solid #A8E6C5;border-radius:8px;font-size:0.88rem;color:#1A7A4A';
+      status.textContent = `🔗 Réconciliation : ${data.mis_a_jour} backer(s) mis à jour. ${data.sans_backer} réf(s) toujours sans correspondance.`;
+      if (data.mis_a_jour > 0) chargerSuivi();
+    }
+  } catch (err) {
+    status.style.cssText = 'display:block;margin-bottom:12px;padding:10px 14px;background:#fce4ec;border:1px solid #E8431A;border-radius:8px;font-size:0.88rem;color:#E8431A';
+    status.textContent = `❌ Erreur : ${err.message}`;
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '🔗 Réconcilier';
+  }
+}
+
 async function chargerSuivi() {
   const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
   const content = document.getElementById('suivi-content');
@@ -1268,9 +1340,19 @@ async function chargerSuivi() {
       <button onclick="envoyerSelection('relance')" style="padding:6px 14px;font-size:0.82rem;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600">${t('btn_send_selection_relance')}</button>
     </div>`;
 
+    // Reconciliation automatique : chercher les colis manquants
+    const sansColis = data.backers.filter(b => !b.numero_colis && b.statut !== 'Expédié');
+    if (sansColis.length > 0) {
+      // Appel silencieux à la réconciliation
+      fetch('/api/reconcile-colis', { method: 'POST' })
+        .then(r => r.json())
+        .then(rec => { if (rec.mis_a_jour > 0) chargerSuivi(); }) // recharger si des colis ont été trouvés
+        .catch(() => {});
+    }
+
     // Tableau
     let html = btnSelection + '<div class="admin-table-wrap"><table><thead><tr>' +
-      `<th style="width:32px"></th><th>${t('col_ref')}</th><th>${t('col_prenom')}</th><th>${t('col_nom')}</th><th>${t('col_email')}</th><th>${t('col_email_sent')}</th><th>${t('col_replied')}</th><th>${t('col_status')}</th>` +
+      `<th style="width:32px"></th><th>${t('col_ref')}</th><th>${t('col_prenom')}</th><th>${t('col_nom')}</th><th>${t('col_email')}</th><th>${t('col_email_sent')}</th><th>${t('col_replied')}</th><th>${t('col_status')}</th><th>Suivi colis</th>` +
       '</tr></thead><tbody>';
 
     data.backers.forEach(b => {
@@ -1283,7 +1365,10 @@ async function chargerSuivi() {
         : b.statut === 'Livré'
         ? `<span style="color:#1A7A4A;font-weight:600">${t('status_delivered')}</span>`
         : '—';
-      html += `<tr><td><input type="checkbox" class="backer-check" value="${b.ref}" data-email="${b.email}" data-prenom="${b.prenom}"></td><td>${b.ref}</td><td>${b.prenom}</td><td>${b.nom}</td><td>${b.email}</td><td style="text-align:center">${emailBadge}</td><td style="text-align:center">${reponseBadge}</td><td style="text-align:center">${statutBadge}</td></tr>`;
+      const colisCell = b.numero_colis
+        ? `<a href="https://www.laposte.fr/outils/suivre-vos-envois?code=${b.numero_colis}" target="_blank" style="color:#1A7A4A;font-weight:600;font-size:0.82rem;text-decoration:none" title="${b.numero_colis}">📦 Suivre</a>`
+        : '—';
+      html += `<tr><td><input type="checkbox" class="backer-check" value="${b.ref}" data-email="${b.email}" data-prenom="${b.prenom}"></td><td>${b.ref}</td><td>${b.prenom}</td><td>${b.nom}</td><td>${b.email}</td><td style="text-align:center">${emailBadge}</td><td style="text-align:center">${reponseBadge}</td><td style="text-align:center">${statutBadge}</td><td style="text-align:center">${colisCell}</td></tr>`;
     });
 
     html += '</tbody></table></div>';
