@@ -265,6 +265,7 @@
       <button id="tab-import" onclick="switchTab('import')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;" data-i18n="tab_import">📥 Import</button>
       <button id="tab-suivi" onclick="switchTab('suivi')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;" data-i18n="tab_suivi">📊 Suivi</button>
       <button id="tab-stock" onclick="switchTab('stock')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;" data-i18n="tab_stock">📦 Stock</button>
+      <button id="tab-commandes" onclick="switchTab('commandes')" style="padding:10px 22px;border:none;background:var(--bg);color:var(--ink-muted);font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;border-radius:8px 8px 0 0;margin-left:4px;">🛒 Commandes</button>
     </div>
 
     <!-- Onglet Réponses -->
@@ -415,6 +416,39 @@
     </div>
 
     <!-- Onglet Stock -->
+    <div id="panel-commandes" style="display:none">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px">IMPORT COMMANDES</p>
+            <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin:0">Commandes BtoC / SAV</h2>
+          </div>
+        </div>
+
+        <!-- Zone de drop CSV -->
+        <div id="commandes-drop-zone" style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:20px"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='#fff8f5'"
+          ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+          ondrop="handleCommandesDrop(event)"
+          onclick="document.getElementById('commandes-file-input').click()">
+          <div style="font-size:2rem;margin-bottom:8px">📂</div>
+          <p style="font-weight:600;margin:0">Déposer le fichier CSV ici</p>
+          <p style="color:var(--ink-muted);font-size:0.85rem;margin:4px 0 0">ou cliquer pour sélectionner</p>
+          <input type="file" id="commandes-file-input" accept=".csv" style="display:none" onchange="handleCommandesFile(this.files[0])">
+        </div>
+
+        <div id="commandes-preview" style="display:none">
+          <div id="commandes-file-info" style="background:var(--bg);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.88rem"></div>
+          <div id="commandes-articles" style="margin-bottom:16px"></div>
+          <button id="commandes-submit-btn" onclick="importerCommandes()" style="padding:10px 24px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.9rem;cursor:pointer">
+            📤 Importer et envoyer le récap
+          </button>
+        </div>
+
+        <div id="commandes-result" style="display:none;margin-top:16px;padding:12px 16px;border-radius:8px;font-size:0.88rem"></div>
+      </div>
+    </div>
+
     <div id="panel-stock" style="display:none">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -822,7 +856,7 @@ function submitForm() {
     .catch(() => {}); // Non bloquant
 })();
 function switchTab(tab) {
-  ['reponses','mail','import','suivi','stock'].forEach(tabId => {
+  ['reponses','mail','import','suivi','stock','commandes'].forEach(tabId => {
     document.getElementById('panel-' + tabId).style.display    = tab === tabId ? 'block' : 'none';
     document.getElementById('tab-'   + tabId).style.background = tab === tabId ? 'var(--accent)' : 'var(--bg)';
     document.getElementById('tab-'   + tabId).style.color      = tab === tabId ? 'white' : 'var(--ink-muted)';
@@ -1266,6 +1300,133 @@ async function importerColiship() {
   } finally {
     btn.disabled    = false;
     btn.textContent = '📦 Importer Coliship';
+  }
+}
+
+// ─── ONGLET COMMANDES ───────────────────────────────────────────
+let _commandesFile = null;
+let _commandesParsed = null;
+
+function handleCommandesDrop(e) {
+  e.preventDefault();
+  document.getElementById('commandes-drop-zone').style.borderColor = 'var(--border)';
+  document.getElementById('commandes-drop-zone').style.background  = '';
+  const file = e.dataTransfer.files[0];
+  if (file) handleCommandesFile(file);
+}
+
+function handleCommandesFile(file) {
+  if (!file || !file.name.toLowerCase().endsWith('.csv')) {
+    alert('Veuillez sélectionner un fichier CSV.');
+    return;
+  }
+  _commandesFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    _commandesParsed = previewCommandes(file.name, text);
+  };
+  reader.readAsText(file, 'latin1');
+}
+
+function previewCommandes(filename, text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const refsLine   = lines[0].split(';');
+  const labelsLine = lines[1].split(';');
+
+  // Articles (col 17+)
+  const articles = [];
+  for (let i = 17; i < refsLine.length; i++) {
+    if (refsLine[i]?.trim()) articles.push({ ref: refsLine[i].trim(), label: labelsLine[i]?.trim() || '' });
+  }
+
+  // Commandes (ligne 9+)
+  const commandes = [];
+  for (let i = 8; i < lines.length; i++) {
+    const cols = lines[i].split(';');
+    if (!cols[0]?.trim()) continue;
+    const arts = {};
+    for (let j = 0; j < articles.length; j++) {
+      const q = parseInt(cols[17 + j] || '0', 10);
+      if (q > 0) arts[articles[j].ref] = q;
+    }
+    commandes.push({ ref: cols[0].trim(), prenom: cols[4]?.trim(), nom: cols[3]?.trim(), articles: arts });
+  }
+
+  // Totaux par article
+  const totaux = {};
+  articles.forEach(a => { totaux[a.ref] = { label: a.label, total: 0 }; });
+  commandes.forEach(c => Object.entries(c.articles).forEach(([r, q]) => { if (totaux[r]) totaux[r].total += q; }));
+
+  // Afficher preview
+  document.getElementById('commandes-file-info').innerHTML =
+    `<strong>📄 ${filename}</strong> — ${commandes.length} commande(s) — ${articles.length} article(s)`;
+
+  const artHtml = Object.entries(totaux).filter(([,v]) => v.total > 0).map(([ref, v]) =>
+    `<tr>
+      <td style="padding:6px 12px;font-family:monospace;font-size:0.85rem">${ref}</td>
+      <td style="padding:6px 12px;font-size:0.85rem">${v.label}</td>
+      <td style="padding:6px 12px;text-align:center;font-weight:700;color:#1A7A4A">${v.total}</td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('commandes-articles').innerHTML = `
+    <p style="font-weight:600;margin-bottom:8px">Articles à sortir du stock :</p>
+    <div class="admin-table-wrap"><table>
+      <thead><tr><th>Référence</th><th>Article</th><th style="text-align:center">Quantité totale</th></tr></thead>
+      <tbody>${artHtml}</tbody>
+    </table></div>`;
+
+  document.getElementById('commandes-preview').style.display = 'block';
+  document.getElementById('commandes-result').style.display  = 'none';
+
+  return { articles, commandes };
+}
+
+async function importerCommandes() {
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  if (!editeur) { alert('Éditeur non détecté dans l\'URL.'); return; }
+  if (!_commandesFile || !_commandesParsed) { alert('Aucun fichier chargé.'); return; }
+
+  const btn    = document.getElementById('commandes-submit-btn');
+  const result = document.getElementById('commandes-result');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Import en cours…';
+
+  try {
+    // Lire le fichier en base64
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(_commandesFile);
+    });
+
+    const resp = await fetch('/api/import-backers?mode=commandes', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ editeur, csvBase64: base64, filename: _commandesFile.name }),
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      result.style.cssText = 'display:block;margin-top:16px;padding:12px 16px;border-radius:8px;background:#EDFAF3;border:1px solid #A8E6C5;color:#1A7A4A;font-size:0.88rem';
+      result.textContent = `✅ ${data.commandes} commande(s) importée(s) — Mail récap envoyé à deoliveira@neoludis.com — CSV archivé dans Dropbox.`;
+      // Reset
+      _commandesFile   = null;
+      _commandesParsed = null;
+      document.getElementById('commandes-preview').style.display  = 'none';
+      document.getElementById('commandes-file-input').value = '';
+    } else {
+      result.style.cssText = 'display:block;margin-top:16px;padding:12px 16px;border-radius:8px;background:#fce4ec;border:1px solid #E8431A;color:#E8431A;font-size:0.88rem';
+      result.textContent = `❌ Erreur : ${data.error}`;
+    }
+  } catch(err) {
+    result.style.cssText = 'display:block;margin-top:16px;padding:12px 16px;border-radius:8px;background:#fce4ec;border:1px solid #E8431A;color:#E8431A;font-size:0.88rem';
+    result.textContent = `❌ Erreur : ${err.message}`;
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '📤 Importer et envoyer le récap';
   }
 }
 
