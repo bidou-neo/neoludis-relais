@@ -11,6 +11,39 @@ const DROPBOX_APP_KEY       = process.env.DROPBOX_APP_KEY;
 const DROPBOX_APP_SECRET    = process.env.DROPBOX_APP_SECRET;
 const STOCK_EMAIL           = 'deoliveira@neoludis.com';
 const DROPBOX_COMMANDES     = '/Neoludis/Preparation de commandes/BtoC/Commandes BtoC';
+const DROPBOX_STOCK_PATH    = '/Neoludis/Preparation de commandes/Sources_BL/stock_site.xlsx';
+
+// Normaliser une ref : virgules → points, espaces → _
+function normaliserRef(ref) {
+  return String(ref || '').replace(/,/g, '.').replace(/ /g, '_').trim();
+}
+
+// Charger le mapping ref_editeur → ref_neoludis depuis le xlsx Dropbox
+async function chargerMappingRefs(token) {
+  const res = await fetch('https://content.dropboxapi.com/2/files/download', {
+    method:  'POST',
+    headers: {
+      'Authorization':   'Bearer ' + token,
+      'Dropbox-API-Arg': JSON.stringify({ path: DROPBOX_STOCK_PATH }),
+    },
+  });
+  if (!res.ok) throw new Error('Dropbox stock HTTP ' + res.status);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const XLSX   = await import('xlsx');
+  const wb     = XLSX.read(buffer, { type: 'buffer' });
+  const ws     = wb.Sheets[wb.SheetNames[0]];
+  const rows   = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  const map    = new Map();
+  rows.forEach(r => {
+    const refEdit = normaliserRef(r.ref_editeur);
+    const refNeo  = String(r.ref_neoludis || '').trim();
+    if (refEdit && refNeo) map.set(refEdit.toLowerCase(), refNeo);
+    // aussi indexer ref_ldg et ref_goliath si présents
+    if (r.ref_ldg)     map.set(normaliserRef(r.ref_ldg).toLowerCase(),     refNeo);
+    if (r.ref_goliath) map.set(normaliserRef(r.ref_goliath).toLowerCase(), refNeo);
+  });
+  return map;
+}
 
 async function getDropboxToken() {
   const body = 'grant_type=refresh_token' +
@@ -62,7 +95,7 @@ function parseCommandesCSV(text) {
   const articles   = [];
   for (let i = 17; i < refsLine.length; i++) {
     if (refsLine[i]?.trim()) {
-      articles.push({ ref: refsLine[i].trim(), label: labelsLine[i]?.trim() || '' });
+      articles.push({ ref: normaliserRef(refsLine[i].trim()), label: labelsLine[i]?.trim() || '' });
     }
   }
 
@@ -101,10 +134,13 @@ function parseCommandesCSV(text) {
 }
 
 // ── Envoyer mail récap stock ─────────────────────────────────
-async function envoyerMailRecap(editeur, filename, articles, commandes) {
+async function envoyerMailRecap(editeur, filename, articles, commandes, mappingRefs) {
   // Calculer les totaux par article
   const totaux = {};
-  articles.forEach(a => { totaux[a.ref] = { label: a.label, total: 0 }; });
+  articles.forEach(a => {
+    const refNeo = mappingRefs.get(a.ref.toLowerCase()) || a.ref;
+    totaux[a.ref] = { label: a.label, refNeo, total: 0 };
+  });
   commandes.forEach(cmd => {
     Object.entries(cmd.articles).forEach(([ref, qte]) => {
       if (totaux[ref]) totaux[ref].total += qte;
@@ -115,7 +151,8 @@ async function envoyerMailRecap(editeur, filename, articles, commandes) {
     .filter(([, v]) => v.total > 0)
     .map(([ref, v]) => `
       <tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9rem">${ref}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9rem">${v.refNeo}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:0.78rem;color:#888">${ref}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #eee">${v.label}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:700;color:#1A7A4A">${v.total}</td>
       </tr>`)
@@ -131,7 +168,8 @@ async function envoyerMailRecap(editeur, filename, articles, commandes) {
       <table style="width:100%;border-collapse:collapse;background:#f9f9f9;border-radius:8px;overflow:hidden">
         <thead>
           <tr style="background:#1a1a1a;color:white">
-            <th style="padding:10px 12px;text-align:left">Référence</th>
+            <th style="padding:10px 12px;text-align:left">Réf Neoludis</th>
+            <th style="padding:10px 12px;text-align:left">Réf éditeur</th>
             <th style="padding:10px 12px;text-align:left">Article</th>
             <th style="padding:10px 12px;text-align:center">Quantité</th>
           </tr>
@@ -155,7 +193,10 @@ async function envoyerMailRecap(editeur, filename, articles, commandes) {
             <td style="padding:6px 10px;font-family:monospace">${c.ref}</td>
             <td style="padding:6px 10px">${c.prenom} ${c.nom}</td>
             <td style="padding:6px 10px">${c.mode === 'Relais' ? '📍 Relais ' + c.code_relais : '🏠 Domicile'}</td>
-            <td style="padding:6px 10px">${Object.entries(c.articles).map(([r,q]) => `${r} x${q}`).join(', ')}</td>
+            <td style="padding:6px 10px">${Object.entries(c.articles).map(([r,q]) => {
+              const rNeo = mappingRefs.get(r.toLowerCase()) || r;
+              return `${rNeo} x${q}`;
+            }).join(', ')}</td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -256,8 +297,15 @@ export default async function handler(req, res) {
       ]);
       await sheetsAppend(token, 'Commandes!A1', rows);
 
-      // 2. Envoyer mail récap
-      await envoyerMailRecap(editeur, filename, articles, commandes);
+      // 2. Envoyer mail récap (avec mapping refs depuis xlsx stock)
+      let mappingRefs = new Map();
+      try {
+        const dropboxToken = await getDropboxToken();
+        mappingRefs = await chargerMappingRefs(dropboxToken);
+      } catch(e) {
+        console.warn('Mapping refs non chargé:', e.message);
+      }
+      await envoyerMailRecap(editeur, filename, articles, commandes, mappingRefs);
 
       // 3. Uploader CSV dans Dropbox
       await uploadDropbox(filename, csvBuffer);
