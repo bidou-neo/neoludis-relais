@@ -14,8 +14,12 @@ const DROPBOX_COMMANDES     = '/Neoludis/Preparation de commandes/BtoC/Commandes
 const DROPBOX_STOCK_PATH    = '/Neoludis/Preparation de commandes/Sources_BL/stock_site.xlsx';
 
 // Normaliser une ref : virgules → points, espaces → _
+// Si le pattern est chiffres.chiffres, tronquer après le point
 function normaliserRef(ref) {
-  return String(ref || '').replace(/,/g, '.').replace(/ /g, '_').trim();
+  let r = String(ref || '').replace(/,/g, '.').replace(/ /g, '_').trim();
+  // Ex: "936644.006" → "936644"
+  r = r.replace(/^(\d+)\.\d+$/, '$1');
+  return r;
 }
 
 // Charger le mapping ref_editeur → ref_neoludis depuis le xlsx Dropbox
