@@ -1350,7 +1350,8 @@ function previewCommandes(filename, text) {
       const q = parseInt(cols[17 + j] || '0', 10);
       if (q > 0) arts[articles[j].ref] = q;
     }
-    commandes.push({ ref: cols[0].trim(), prenom: cols[4]?.trim(), nom: cols[3]?.trim(), articles: arts });
+    const codeRelais = cols[13]?.trim() || '';
+    commandes.push({ ref: cols[0].trim(), prenom: cols[4]?.trim(), nom: cols[3]?.trim(), mode: codeRelais ? 'Relais' : 'Domicile', code_relais: codeRelais, articles: arts });
   }
 
   // Totaux par article
