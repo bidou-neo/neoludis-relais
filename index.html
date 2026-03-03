@@ -531,7 +531,17 @@
       'Agate':            { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       'Origames':         { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
       'Super Meeple':     { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
-      'Lucky Duck Games': { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)',    choix: false },
+      'Lucky Duck Games':      { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'arkada studio':         { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'BadBoomGames':          { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'DAIMON PLAY':           { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'MJ GAMES':              { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'MUSOKA STUDIO':         { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'Nostromo':              { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'Nothing But Games':     { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'scriptarium':           { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'Studio Locomuse inc.':  { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
+      'Synapses Games':        { fond: '#1a1a1a', filtre: 'brightness(0) invert(1)', choix: false },
       // Ajouter ici les prochains éditeurs
     };
 
@@ -616,50 +626,42 @@ function choisirLivraison(mode) {
   }
 }
 
-// ─── CONFIG MOTS DE PASSE ADMIN PAR ÉDITEUR ───────────────────────
-const ADMIN_PASSWORDS = {
-  '':            'Neoludis2024!',   // admin global (toutes les réponses)
-  'dendrobat':   'Dendrobat2024!',
-  'D_ART':       'DART2024!',
-  'Antre_monde': 'AntreMonde2024!',
-  'Tiki':        'Tiki2024!',
-  'neoludis':    'Neoludis2024!',
-  'Agate':             'Agate2024!',
-  'Origames':          'Origames2024!',
-  'Super Meeple':      'SuperMeeple2024!',
-  'Lucky Duck Games':  'LuckyDuck2024!',
-  'D_ART':       'DART2024!',
-  'Antre_monde': 'AntreMonde2024!',
-  'Tiki':        'Tiki2024!',
-  'neoludis':    'Neoludis2024!',
-  // Ajouter les prochains éditeurs ici
-};
-
+// ─── LOGIN ADMIN (mots de passe stockés dans Vercel) ──────────────
 let adminEditeur = ''; // éditeur courant pour filtrer les réponses
+
+async function checkAdminPassword(editeur, password) {
+  const res  = await fetch('/api/check-order?mode=password', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ editeur, password }),
+  });
+  const data = await res.json();
+  return data.ok === true;
+}
 
 if (window.location.search.includes('admin')) {
   const editeurParam = new URLSearchParams(window.location.search).get('editeur') || '';
-  const pwdAttendu = ADMIN_PASSWORDS[editeurParam];
-
-  if (!pwdAttendu) {
-    alert(t('admin_unknown_editeur'));
+  const pwd = prompt(`Mot de passe admin${editeurParam ? ' (' + editeurParam + ')' : ''} :`);
+  if (!pwd) {
     window.location.href = '/';
   } else {
-    const pwd = prompt(`Mot de passe admin${editeurParam ? ' (' + editeurParam + ')' : ''} :`);
-    if (pwd === pwdAttendu) {
-      adminEditeur = editeurParam;
-      document.getElementById('form-section').style.display = 'none';
-      document.getElementById('admin-panel').style.display = 'block';
-      renderAdminTable();
-      // Initialiser les templates après que tout le JS soit chargé
-      setTimeout(() => initMailTemplates(), 0);
-    } else {
-      alert(t('admin_wrong_password'));
+    checkAdminPassword(editeurParam, pwd).then(ok => {
+      if (ok) {
+        adminEditeur = editeurParam;
+        document.getElementById('form-section').style.display = 'none';
+        document.getElementById('admin-panel').style.display  = 'block';
+        renderAdminTable();
+        setTimeout(() => initMailTemplates(), 0);
+      } else {
+        alert(t('admin_wrong_password'));
+        window.location.href = '/';
+      }
+    }).catch(() => {
+      alert('Erreur de connexion, réessayez.');
       window.location.href = '/';
-    }
+    });
   }
 }
-
 function goToStep2() {
   const prenom = document.getElementById('prenom').value.trim();
   const nom = document.getElementById('nom').value.trim();
