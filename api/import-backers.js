@@ -4,11 +4,28 @@
 
 import { getAccessToken } from './_google-auth.js';
 
-const SHEET_ID      = process.env.GOOGLE_SHEET_ID;
-const RESEND_KEY    = process.env.RESEND_API_KEY;
-const DROPBOX_TOKEN = process.env.DROPBOX_TOKEN;
-const STOCK_EMAIL   = 'deoliveira@neoludis.com';
-const DROPBOX_COMMANDES = '/Neoludis/Preparation de commandes/BtoC/Commandes BtoC';
+const SHEET_ID              = process.env.GOOGLE_SHEET_ID;
+const RESEND_KEY            = process.env.RESEND_API_KEY;
+const DROPBOX_REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN;
+const DROPBOX_APP_KEY       = process.env.DROPBOX_APP_KEY;
+const DROPBOX_APP_SECRET    = process.env.DROPBOX_APP_SECRET;
+const STOCK_EMAIL           = 'deoliveira@neoludis.com';
+const DROPBOX_COMMANDES     = '/Neoludis/Preparation de commandes/BtoC/Commandes BtoC';
+
+async function getDropboxToken() {
+  const body = 'grant_type=refresh_token' +
+    '&refresh_token=' + encodeURIComponent(DROPBOX_REFRESH_TOKEN) +
+    '&client_id=' + DROPBOX_APP_KEY +
+    '&client_secret=' + DROPBOX_APP_SECRET;
+  const res  = await fetch('https://api.dropbox.com/oauth2/token', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error('Dropbox token error: ' + (data.error_description || data.error));
+  return data.access_token;
+}
 
 // ── Helpers Sheets ───────────────────────────────────────────
 async function sheetsRead(token, range) {
@@ -159,11 +176,12 @@ async function envoyerMailRecap(editeur, filename, articles, commandes) {
 
 // ── Upload CSV vers Dropbox ──────────────────────────────────
 async function uploadDropbox(filename, csvBuffer) {
-  const path = `${DROPBOX_COMMANDES}/${filename}`;
-  const res  = await fetch('https://content.dropboxapi.com/2/files/upload', {
+  const token = await getDropboxToken();
+  const path  = `${DROPBOX_COMMANDES}/${filename}`;
+  const res   = await fetch('https://content.dropboxapi.com/2/files/upload', {
     method:  'POST',
     headers: {
-      'Authorization':   `Bearer ${DROPBOX_TOKEN}`,
+      'Authorization':   `Bearer ${token}`,
       'Content-Type':    'application/octet-stream',
       'Dropbox-API-Arg': JSON.stringify({ path, mode: 'add', autorename: true }),
     },
