@@ -1450,6 +1450,24 @@ async function importerCommandes() {
   }
 }
 
+// ─── Affichage lien suivi colis (Coliship ou Chronopost, multicolis) ───
+function suiviColisHtml(numero_colis) {
+  if (!numero_colis) return '—';
+
+  const isChrono = numero_colis.startsWith('CHRONO:');
+  const numeros  = isChrono
+    ? numero_colis.replace('CHRONO:', '').split(' | ')
+    : [numero_colis];
+
+  return numeros.map((n, i) => {
+    const url = isChrono
+      ? `https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT=${n}`
+      : `https://www.laposte.fr/outils/suivre-vos-envois?code=${n}`;
+    const label = isChrono ? `📦 Chrono${numeros.length > 1 ? ' ' + (i+1) : ''}` : `📦 Suivre`;
+    return `<a href="${url}" target="_blank" style="color:var(--accent);font-size:0.82rem;text-decoration:none;margin-right:6px">${label}</a>`;
+  }).join('');
+}
+
 function switchCommandesTab(tab) {
   ['import','suivi'].forEach(t => {
     document.getElementById('stab-'   + t).style.background = t === tab ? 'var(--accent)' : 'var(--bg)';
@@ -1515,9 +1533,7 @@ async function chargerSuiviCommandes() {
       const modeBadge = (c.mode||'').includes('Relais')
         ? `<span style="font-size:0.82rem">📍 Relais</span>`
         : `<span style="font-size:0.82rem">🏠 Domicile</span>`;
-      const colisHtml = c.numero_colis
-        ? `<a href="https://www.laposte.fr/outils/suivre-vos-envois?code=${c.numero_colis}" target="_blank" style="color:var(--accent);font-size:0.82rem;text-decoration:none">📦 ${c.numero_colis}</a>`
-        : '—';
+      const colisHtml = c.numero_colis ? suiviColisHtml(c.numero_colis) : '—';
       return `<tr>
         <td style="padding:8px 12px;font-family:monospace;font-size:0.85rem">${c.ref}</td>
         <td style="padding:8px 12px">${c.prenom} ${c.nom}</td>
@@ -1637,9 +1653,7 @@ async function chargerSuivi() {
         : b.statut === 'Livré'
         ? `<span style="color:#1A7A4A;font-weight:600">${t('status_delivered')}</span>`
         : '—';
-      const colisCell = b.numero_colis
-        ? `<a href="https://www.laposte.fr/outils/suivre-vos-envois?code=${b.numero_colis}" target="_blank" style="color:#1A7A4A;font-weight:600;font-size:0.82rem;text-decoration:none" title="${b.numero_colis}">📦 Suivre</a>`
-        : '—';
+      const colisCell = b.numero_colis ? suiviColisHtml(b.numero_colis) : '—';
       html += `<tr><td><input type="checkbox" class="backer-check" value="${b.ref}" data-email="${b.email}" data-prenom="${b.prenom}"></td><td>${b.ref}</td><td>${b.prenom}</td><td>${b.nom}</td><td>${b.email}</td><td style="text-align:center">${emailBadge}</td><td style="text-align:center">${reponseBadge}</td><td style="text-align:center">${statutBadge}</td><td style="text-align:center">${colisCell}</td></tr>`;
     });
 
