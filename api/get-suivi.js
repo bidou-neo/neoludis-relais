@@ -9,7 +9,7 @@ const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const { editeur, ref } = req.query;
+  const { editeur, ref, mode } = req.query;
   if (!editeur) return res.status(400).json({ error: 'Paramètre editeur manquant' });
 
   try {
@@ -72,6 +72,38 @@ export default async function handler(req, res) {
     }));
 
     return res.status(200).json({ success: true, backers });
+
+    // ── Mode : suivi commandes ──────────────────────────────────────
+    if (mode === 'commandes') {
+      const rows = await (async () => {
+        const r    = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('Commandes!A:N')}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const d = await r.json();
+        if (d.error) throw new Error(d.error.message);
+        return (d.values || []).slice(1);
+      })();
+
+      const commandes = rows
+        .filter(r => (r[1]||'').toLowerCase() === editeurN)
+        .map(r => ({
+          date_import:  r[0]  || '',
+          editeur:      r[1]  || '',
+          fichier:      r[2]  || '',
+          ref:          r[3]  || '',
+          prenom:       r[4]  || '',
+          nom:          r[5]  || '',
+          email:        r[6]  || '',
+          telephone:    r[7]  || '',
+          articles:     r[13] || '',
+          mode:         r[14] || '',
+          statut:       r[15] || 'En préparation',
+          numero_colis: r[16] || '',
+        }));
+
+      return res.status(200).json({ success: true, commandes });
+    }
 
   } catch (err) {
     console.error('get-suivi error:', err);
