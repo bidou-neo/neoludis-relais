@@ -62,18 +62,21 @@ function parseCommandesCSV(text) {
       if (qte > 0) qtés[articles[j].ref] = qte;
     }
 
+    const codeRelais = cols[13]?.trim() || '';
     commandes.push({
-      ref:        cols[0]?.trim() || '',
-      email:      cols[1]?.trim() || '',
-      nom:        cols[3]?.trim() || '',
-      prenom:     cols[4]?.trim() || '',
-      adresse1:   cols[5]?.trim() || '',
-      adresse2:   cols[6]?.trim() || '',
-      cp:         cols[8]?.trim() || '',
-      ville:      cols[9]?.trim() || '',
-      pays:       cols[10]?.trim() || '',
-      telephone:  (cols[14] || cols[15] || '').trim(),
-      articles:   qtés,
+      ref:         cols[0]?.trim() || '',
+      email:       cols[1]?.trim() || '',
+      nom:         cols[3]?.trim() || '',
+      prenom:      cols[4]?.trim() || '',
+      adresse1:    cols[5]?.trim() || '',
+      adresse2:    cols[6]?.trim() || '',
+      cp:          cols[8]?.trim() || '',
+      ville:       cols[9]?.trim() || '',
+      pays:        cols[10]?.trim() || '',
+      telephone:   (cols[14] || cols[15] || '').trim(),
+      code_relais: codeRelais,
+      mode:        codeRelais ? 'Relais' : 'Domicile',
+      articles:    qtés,
     });
   }
 
@@ -125,6 +128,7 @@ async function envoyerMailRecap(editeur, filename, articles, commandes) {
           <tr style="background:#f0f0f0">
             <th style="padding:6px 10px;text-align:left">Réf</th>
             <th style="padding:6px 10px;text-align:left">Nom</th>
+            <th style="padding:6px 10px;text-align:left">Mode</th>
             <th style="padding:6px 10px;text-align:left">Articles</th>
           </tr>
         </thead>
@@ -133,6 +137,7 @@ async function envoyerMailRecap(editeur, filename, articles, commandes) {
           <tr style="border-bottom:1px solid #eee">
             <td style="padding:6px 10px;font-family:monospace">${c.ref}</td>
             <td style="padding:6px 10px">${c.prenom} ${c.nom}</td>
+            <td style="padding:6px 10px">${c.mode === 'Relais' ? '📍 Relais ' + c.code_relais : '🏠 Domicile'}</td>
             <td style="padding:6px 10px">${Object.entries(c.articles).map(([r,q]) => `${r} x${q}`).join(', ')}</td>
           </tr>`).join('')}
         </tbody>
@@ -229,6 +234,7 @@ export default async function handler(req, res) {
         now, editeur, filename, c.ref, c.prenom, c.nom, c.email,
         c.telephone, c.adresse1, c.adresse2, c.cp, c.ville, c.pays,
         Object.entries(c.articles).map(([r,q]) => `${r}×${q}`).join(' | '),
+        c.mode + (c.code_relais ? ` (${c.code_relais})` : ''),
       ]);
       await sheetsAppend(token, 'Commandes!A1', rows);
 
