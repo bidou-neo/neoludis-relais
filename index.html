@@ -417,15 +417,19 @@
 
     <!-- Onglet Stock -->
     <div id="panel-commandes" style="display:none">
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div>
-            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px">IMPORT COMMANDES</p>
-            <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin:0">Commandes BtoC / SAV</h2>
-          </div>
-        </div>
 
-        <!-- Zone de drop CSV -->
+      <!-- Sous-onglets -->
+      <div style="display:flex;gap:4px;margin-bottom:0">
+        <button id="stab-import" onclick="switchCommandesTab('import')" style="padding:8px 20px;border:none;border-radius:8px 8px 0 0;font-family:'Syne',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;background:var(--accent);color:white">📥 Import</button>
+        <button id="stab-suivi" onclick="switchCommandesTab('suivi')" style="padding:8px 20px;border:none;border-radius:8px 8px 0 0;font-family:'Syne',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;background:var(--bg);color:var(--ink-muted)">📊 Suivi commandes</button>
+      </div>
+
+      <!-- Sous-panel Import -->
+      <div id="spanel-import" class="card" style="border-radius:0 8px 8px 8px">
+        <div style="margin-bottom:16px">
+          <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px">IMPORT COMMANDES</p>
+          <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin:0">Commandes BtoC / SAV</h2>
+        </div>
         <div id="commandes-drop-zone" style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:20px"
           ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='#fff8f5'"
           ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
@@ -436,7 +440,6 @@
           <p style="color:var(--ink-muted);font-size:0.85rem;margin:4px 0 0">ou cliquer pour sélectionner</p>
           <input type="file" id="commandes-file-input" accept=".csv" style="display:none" onchange="handleCommandesFile(this.files[0])">
         </div>
-
         <div id="commandes-preview" style="display:none">
           <div id="commandes-file-info" style="background:var(--bg);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.88rem"></div>
           <div id="commandes-articles" style="margin-bottom:16px"></div>
@@ -444,9 +447,23 @@
             📤 Importer et envoyer le récap
           </button>
         </div>
-
         <div id="commandes-result" style="display:none;margin-top:16px;padding:12px 16px;border-radius:8px;font-size:0.88rem"></div>
       </div>
+
+      <!-- Sous-panel Suivi -->
+      <div id="spanel-suivi" class="card" style="display:none;border-radius:0 8px 8px 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <p style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px">SUIVI</p>
+            <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin:0">Commandes en cours</h2>
+          </div>
+          <button onclick="chargerSuiviCommandes()" style="padding:8px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:0.82rem;cursor:pointer">🔄 Actualiser</button>
+        </div>
+        <div id="suivi-commandes-content">
+          <p style="color:var(--ink-muted);text-align:center;padding:40px 0">Cliquez sur "Suivi commandes" pour charger les données</p>
+        </div>
+      </div>
+
     </div>
 
     <div id="panel-stock" style="display:none">
@@ -1428,6 +1445,87 @@ async function importerCommandes() {
   } finally {
     btn.disabled    = false;
     btn.textContent = '📤 Importer et envoyer le récap';
+  }
+}
+
+function switchCommandesTab(tab) {
+  ['import','suivi'].forEach(t => {
+    document.getElementById('stab-'   + t).style.background = t === tab ? 'var(--accent)' : 'var(--bg)';
+    document.getElementById('stab-'   + t).style.color      = t === tab ? 'white' : 'var(--ink-muted)';
+    document.getElementById('spanel-' + t).style.display    = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'suivi') chargerSuiviCommandes();
+}
+
+async function chargerSuiviCommandes() {
+  const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
+  if (!editeur) return;
+  const el = document.getElementById('suivi-commandes-content');
+  el.innerHTML = '<p style="color:var(--ink-muted);text-align:center;padding:40px 0">⏳ Chargement…</p>';
+
+  try {
+    const r    = await fetch(`/api/get-suivi?editeur=${encodeURIComponent(editeur)}&mode=commandes`);
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error);
+
+    const cmds = data.commandes;
+    if (!cmds.length) {
+      el.innerHTML = '<p style="color:var(--ink-muted);text-align:center;padding:40px 0">Aucune commande trouvée.</p>';
+      return;
+    }
+
+    // Stats rapides
+    const total    = cmds.length;
+    const expedies = cmds.filter(c => (c.statut||'').toLowerCase().includes('exp')).length;
+    const enCours  = total - expedies;
+
+    const statsHtml = `<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <div style="background:var(--bg);border-radius:8px;padding:12px 20px;flex:1;min-width:120px;text-align:center">
+        <div style="font-size:1.6rem;font-weight:700">${total}</div>
+        <div style="font-size:0.78rem;color:var(--ink-muted)">Total</div>
+      </div>
+      <div style="background:#fff8f5;border-radius:8px;padding:12px 20px;flex:1;min-width:120px;text-align:center">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--accent)">${enCours}</div>
+        <div style="font-size:0.78rem;color:var(--ink-muted)">En préparation</div>
+      </div>
+      <div style="background:#EDFAF3;border-radius:8px;padding:12px 20px;flex:1;min-width:120px;text-align:center">
+        <div style="font-size:1.6rem;font-weight:700;color:#1A7A4A">${expedies}</div>
+        <div style="font-size:0.78rem;color:var(--ink-muted)">Expédiés</div>
+      </div>
+    </div>`;
+
+    const rows = cmds.map(c => {
+      const statut   = (c.statut || 'En préparation');
+      const expedié  = statut.toLowerCase().includes('exp');
+      const statutBadge = expedié
+        ? `<span style="background:#EDFAF3;color:#1A7A4A;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:600">✅ Expédié</span>`
+        : `<span style="background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:600">📦 En préparation</span>`;
+      const modeBadge = (c.mode||'').includes('Relais')
+        ? `<span style="font-size:0.82rem">📍 Relais</span>`
+        : `<span style="font-size:0.82rem">🏠 Domicile</span>`;
+      const colisHtml = c.numero_colis
+        ? `<a href="https://www.laposte.fr/outils/suivre-vos-envois?code=${c.numero_colis}" target="_blank" style="color:var(--accent);font-size:0.82rem;text-decoration:none">📦 ${c.numero_colis}</a>`
+        : '—';
+      return `<tr>
+        <td style="padding:8px 12px;font-family:monospace;font-size:0.85rem">${c.ref}</td>
+        <td style="padding:8px 12px">${c.prenom} ${c.nom}</td>
+        <td style="padding:8px 12px;font-size:0.82rem;color:var(--ink-muted)">${c.date_import ? c.date_import.split(' ')[0] : ''}</td>
+        <td style="padding:8px 12px">${modeBadge}</td>
+        <td style="padding:8px 12px">${statutBadge}</td>
+        <td style="padding:8px 12px">${colisHtml}</td>
+      </tr>`;
+    }).join('');
+
+    el.innerHTML = statsHtml + `<div class="admin-table-wrap"><table>
+      <thead><tr>
+        <th>Réf commande</th><th>Nom / Prénom</th><th>Date import</th>
+        <th>Mode livraison</th><th>Statut</th><th>Suivi colis</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+
+  } catch(err) {
+    el.innerHTML = `<p style="color:red;text-align:center;padding:20px">❌ ${err.message}</p>`;
   }
 }
 
