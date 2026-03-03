@@ -1,6 +1,7 @@
 // api/get-suivi.js
-// GET ?editeur=dendrobat           → liste tous les backers d'un éditeur (suivi)
-// GET ?editeur=dendrobat&ref=XXXX  → récupère un seul backer (ex-get-backer.js)
+// GET ?editeur=X              → liste tous les backers (suivi)
+// GET ?editeur=X&ref=Y        → un seul backer (ex-get-backer.js)
+// GET ?editeur=X&mode=commandes → suivi commandes BtoC
 
 import { getAccessToken } from './_google-auth.js';
 
@@ -16,7 +17,7 @@ export default async function handler(req, res) {
     const token    = await getAccessToken('https://www.googleapis.com/auth/spreadsheets.readonly');
     const editeurN = editeur.toLowerCase();
 
-    // ── Mode : récupérer un seul backer (ex-get-backer.js) ──────────
+    // ── Mode : un seul backer ────────────────────────────────────────
     if (ref) {
       const r    = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Backers!A:F`,
@@ -40,7 +41,36 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── Mode : liste complète pour suivi ─────────────────────────────
+    // ── Mode : suivi commandes BtoC ──────────────────────────────────
+    if (mode === 'commandes') {
+      const r    = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('Commandes!A:Q')}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await r.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const commandes = (data.values || []).slice(1)
+        .filter(r => (r[1]||'').toLowerCase() === editeurN)
+        .map(r => ({
+          date_import:  r[0]  || '',
+          editeur:      r[1]  || '',
+          fichier:      r[2]  || '',
+          ref:          r[3]  || '',
+          prenom:       r[4]  || '',
+          nom:          r[5]  || '',
+          email:        r[6]  || '',
+          telephone:    r[7]  || '',
+          articles:     r[13] || '',
+          mode:         r[14] || '',
+          statut:       r[15] || 'En préparation',
+          numero_colis: r[16] || '',
+        }));
+
+      return res.status(200).json({ success: true, commandes });
+    }
+
+    // ── Mode : liste backers pour suivi ─────────────────────────────
     const backersRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Backers!A:I`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -72,38 +102,6 @@ export default async function handler(req, res) {
     }));
 
     return res.status(200).json({ success: true, backers });
-
-    // ── Mode : suivi commandes ──────────────────────────────────────
-    if (mode === 'commandes') {
-      const rows = await (async () => {
-        const r    = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('Commandes!A:N')}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const d = await r.json();
-        if (d.error) throw new Error(d.error.message);
-        return (d.values || []).slice(1);
-      })();
-
-      const commandes = rows
-        .filter(r => (r[1]||'').toLowerCase() === editeurN)
-        .map(r => ({
-          date_import:  r[0]  || '',
-          editeur:      r[1]  || '',
-          fichier:      r[2]  || '',
-          ref:          r[3]  || '',
-          prenom:       r[4]  || '',
-          nom:          r[5]  || '',
-          email:        r[6]  || '',
-          telephone:    r[7]  || '',
-          articles:     r[13] || '',
-          mode:         r[14] || '',
-          statut:       r[15] || 'En préparation',
-          numero_colis: r[16] || '',
-        }));
-
-      return res.status(200).json({ success: true, commandes });
-    }
 
   } catch (err) {
     console.error('get-suivi error:', err);
