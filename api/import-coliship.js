@@ -151,6 +151,45 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, mis_a_jour });
     }
 
+    // ── Mode réconciliation commandes ───────────────────────────
+    if (mode === 'reconcile-commandes') {
+      const colis = await sheetsRead(token, 'Colis!A:B');
+      const mappings = new Map();
+      colis.forEach((row, i) => {
+        if (i === 0) return;
+        if (row[0] && row[1]) mappings.set(String(row[0]).toLowerCase(), row[1]);
+      });
+      if (!mappings.size) return res.status(200).json({ success: true, mis_a_jour: 0 });
+
+      // Lire onglet Commandes col D (ref commande) et Q (numero_colis)
+      const rows    = await sheetsRead(token, 'Commandes!A:Q');
+      const updates = [];
+      rows.forEach((row, i) => {
+        if (i === 0) return;
+        const ref      = String(row[3] || '').toLowerCase();
+        const dejaColis = row[16] && row[16].trim();
+        if (!dejaColis && mappings.has(ref)) {
+          updates.push({ range: `Commandes!Q${i + 1}`, values: [[mappings.get(ref)]] });
+          updates.push({ range: `Commandes!P${i + 1}`, values: [['Expédié']] });
+        }
+      });
+
+      if (updates.length) {
+        const res2 = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GOOGLE_SHEET_ID}/values:batchUpdate`,
+          {
+            method:  'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ valueInputOption: 'USER_ENTERED', data: updates }),
+          }
+        );
+        const d = await res2.json();
+        if (d.error) throw new Error(d.error.message);
+      }
+
+      return res.status(200).json({ success: true, mis_a_jour: updates.length / 2 });
+    }
+
     // ── Mode import normal ───────────────────────────────────
     if (!DROPBOX_TOKEN) return res.status(500).json({ error: 'DROPBOX_TOKEN manquant' });
 
