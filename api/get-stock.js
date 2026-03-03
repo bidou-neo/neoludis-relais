@@ -79,7 +79,7 @@ function normalizeRow(row) {
     ref_neoludis:     String(row.ref_neoludis     || '').trim(),
     designation:      String(row.designation      || '').trim(),
     ean:              String(row.ean              || '').trim(),
-    editeur:          String(row.editeur          || '').trim(),
+    editeur:          String(row.Editeur || row.editeur || '').trim(),
     ref_editeur:      String(row.ref_editeur      || '').trim(),
     ref_ldg:          String(row.ref_ldg          || '').trim(),
     ref_goliath:      String(row.ref_goliath      || '').trim(),
