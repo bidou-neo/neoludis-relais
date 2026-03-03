@@ -1469,6 +1469,16 @@ async function chargerSuiviCommandes() {
     if (!data.success) throw new Error(data.error);
 
     const cmds = data.commandes;
+
+    // Réconciliation silencieuse : commandes sans numéro de colis
+    const sansColis = cmds.filter(c => !c.numero_colis);
+    if (sansColis.length > 0) {
+      fetch('/api/import-coliship?mode=reconcile-commandes', { method: 'POST' })
+        .then(r => r.json())
+        .then(rec => { if (rec.mis_a_jour > 0) chargerSuiviCommandes(); })
+        .catch(() => {});
+    }
+
     if (!cmds.length) {
       el.innerHTML = '<p style="color:var(--ink-muted);text-align:center;padding:40px 0">Aucune commande trouvée.</p>';
       return;
