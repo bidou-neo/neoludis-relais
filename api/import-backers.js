@@ -13,13 +13,34 @@ const STOCK_EMAIL           = 'deoliveira@neoludis.com';
 const DROPBOX_COMMANDES     = '/Neoludis/Preparation de commandes/BtoC/Commandes BtoC';
 const DROPBOX_STOCK_PATH    = '/Neoludis/Preparation de commandes/Sources_BL/stock_site.xlsx';
 
-// Normaliser une ref : virgules → points, espaces → _
+// Corriger encodage UTF-8 mal interprété en latin-1
+// Ex: "Les mystÃ¨res dâ€™aubÃ©pine" → "Les mystères d'aubépine"
+function fixEncoding(s) {
+  return String(s || '')
+    .replace(/Ã©/g, 'é').replace(/Ã¨/g, 'è').replace(/Ãª/g, 'ê').replace(/Ã«/g, 'ë')
+    .replace(/Ã /g, 'à').replace(/Ã¢/g, 'â').replace(/Ã¤/g, 'ä').replace(/Ã®/g, 'î')
+    .replace(/Ã¯/g, 'ï').replace(/Ã´/g, 'ô').replace(/Ã¶/g, 'ö').replace(/Ã¹/g, 'ù')
+    .replace(/Ã»/g, 'û').replace(/Ã¼/g, 'ü').replace(/Ã§/g, 'ç')
+    .replace(/Ã‰/g, 'É').replace(/Ãˆ/g, 'È').replace(/Ã€/g, 'À').replace(/Ã‚/g, 'Â')
+    .replace(/â€™/g, "'").replace(/â€œ/g, '\u201c').replace(/â€\u009d/g, '\u201d')
+    .replace(/â€"/g, '\u2013').replace(/â€"/g, '\u2014');
+}
+
+// Normaliser une ref : fix encodage, virgules → points, espaces → _
 // Si le pattern est chiffres.chiffres, tronquer après le point
 function normaliserRef(ref) {
-  let r = String(ref || '').replace(/,/g, '.').replace(/ /g, '_').trim();
+  let r = fixEncoding(String(ref || '')).replace(/,/g, '.').replace(/ /g, '_').trim();
   // Ex: "936644.006" → "936644"
   r = r.replace(/^(\d+)\.\d+$/, '$1');
   return r;
+}
+
+// Normaliser une chaîne pour matching flou (sans accents, sans ponctuation, minuscules)
+function slugify(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // supprimer accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, ''); // garder uniquement alphanumérique
 }
 
 // Charger le mapping ref_editeur → ref_neoludis depuis le xlsx Dropbox
@@ -38,15 +59,46 @@ async function chargerMappingRefs(token) {
   const ws     = wb.Sheets[wb.SheetNames[0]];
   const rows   = XLSX.utils.sheet_to_json(ws, { defval: '' });
   const map    = new Map();
+
+  // Index flou pour D_ART (code_fournisseur = '011') : slug désignation → ref_neoludis
+  const dartIndex = []; // [{ slug, refNeo }]
+
   rows.forEach(r => {
     const refEdit = normaliserRef(r.ref_editeur);
     const refNeo  = String(r.ref_neoludis || '').trim();
-    if (refEdit && refNeo) map.set(refEdit.toLowerCase(), refNeo);
-    // aussi indexer ref_ldg et ref_goliath si présents
+    if (!refNeo) return;
+    if (refEdit) map.set(refEdit.toLowerCase(), refNeo);
     if (r.ref_ldg)     map.set(normaliserRef(r.ref_ldg).toLowerCase(),     refNeo);
     if (r.ref_goliath) map.set(normaliserRef(r.ref_goliath).toLowerCase(), refNeo);
+
+    // Index flou D_ART : indexer le slug de la désignation
+    if (String(r.code_fournisseur || '').trim() === '011') {
+      const designation = String(r.designation || '').trim();
+      if (designation) dartIndex.push({ slug: slugify(designation), refNeo });
+    }
   });
+
+  // Attacher l'index D_ART à la map pour usage dans matcherRef
+  map._dartIndex = dartIndex;
   return map;
+}
+
+// Résoudre une ref CSV vers ref_neoludis (avec fallback flou pour D_ART)
+function matcherRef(ref, mappingRefs, isDart = false) {
+  const refNorm = normaliserRef(ref);
+  // 1. Matching exact
+  const exact = mappingRefs.get(refNorm.toLowerCase());
+  if (exact) return exact;
+
+  // 2. Matching flou désignation (D_ART uniquement)
+  if (isDart && mappingRefs._dartIndex?.length) {
+    const slugRef = slugify(fixEncoding(ref));
+    if (slugRef.length < 5) return null; // trop court = trop risqué
+    for (const { slug, refNeo } of mappingRefs._dartIndex) {
+      if (slug.includes(slugRef) || slugRef.includes(slug)) return refNeo;
+    }
+  }
+  return null;
 }
 
 async function getDropboxToken() {
@@ -139,10 +191,11 @@ function parseCommandesCSV(text) {
 
 // ── Envoyer mail récap stock ─────────────────────────────────
 async function envoyerMailRecap(editeur, filename, articles, commandes, mappingRefs) {
+  const isDart = editeur.toLowerCase() === 'd_art' || editeur.toLowerCase() === 'de architecturart';
   // Calculer les totaux par article
   const totaux = {};
   articles.forEach(a => {
-    const refNeo = mappingRefs.get(a.ref.toLowerCase()) || a.ref;
+    const refNeo = matcherRef(a.ref, mappingRefs, isDart) || a.ref;
     totaux[a.ref] = { label: a.label, refNeo, total: 0 };
   });
   commandes.forEach(cmd => {
@@ -198,7 +251,7 @@ async function envoyerMailRecap(editeur, filename, articles, commandes, mappingR
             <td style="padding:6px 10px">${c.prenom} ${c.nom}</td>
             <td style="padding:6px 10px">${c.mode === 'Relais' ? '📍 Relais ' + c.code_relais : '🏠 Domicile'}</td>
             <td style="padding:6px 10px">${Object.entries(c.articles).map(([r,q]) => {
-              const rNeo = mappingRefs.get(r.toLowerCase()) || r;
+              const rNeo = matcherRef(r, mappingRefs, isDart) || r;
               return `${rNeo} x${q}`;
             }).join(', ')}</td>
           </tr>`).join('')}
