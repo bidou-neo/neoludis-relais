@@ -688,7 +688,7 @@ function choisirLivraison(mode) {
 let adminEditeur = ''; // éditeur courant pour filtrer les réponses
 
 async function checkAdminPassword(editeur, password) {
-  const res  = await fetch('/api/index?action=check-order&mode=password', {
+  const res  = await fetch('/api/index?action=verify-password', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ editeur, password }),
