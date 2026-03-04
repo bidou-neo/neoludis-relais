@@ -759,7 +759,7 @@ function goToStep2() {
   btn.innerHTML = '<span class="spinner"></span> Vérification…';
   btn.disabled = true;
 
-  fetch(`/api/check-order?editeur=${encodeURIComponent(editeur)}&commande=${encodeURIComponent(commande)}`)
+  fetch(`/api/index?action=check-order&editeur=${encodeURIComponent(editeur)}&commande=${encodeURIComponent(commande)}`)
     .then(r => r.json())
     .then(data => {
       if (data.existe) {
@@ -2052,7 +2052,7 @@ async function chargerStock() {
   }
 
   try {
-    const url = `/api/get-stock?editeur=${encodeURIComponent(editeur)}&depot=${depot}`;
+    const url = `/api/index?action=get-stock&editeur=${encodeURIComponent(editeur)}&depot=${depot}`;
     console.log('[Stock] Requête :', url);
     const r    = await fetch(url);
 
