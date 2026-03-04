@@ -688,7 +688,7 @@ function choisirLivraison(mode) {
 let adminEditeur = ''; // éditeur courant pour filtrer les réponses
 
 async function checkAdminPassword(editeur, password) {
-  const res  = await fetch('/api/check-order?mode=password', {
+  const res  = await fetch('/api/index?action=check-order&mode=password', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ editeur, password }),
@@ -808,7 +808,7 @@ function backToStep1() {
 async function initWidget() {
   try {
     // Récupérer le token via la fonction Netlify
-    const res = await fetch('/api/auth-colissimo', { method: 'POST' });
+    const res = await fetch('/api/index?action=auth-colissimo', { method: 'POST' });
     const data = await res.json();
 
     if (!data.token) {
@@ -881,7 +881,7 @@ function submitForm() {
   const existing = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   existing.push(record);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-  fetch('/api/save-response', {
+  fetch('/api/index?action=save-response', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(record)
@@ -917,7 +917,7 @@ function submitForm() {
   }
 
   // Récupérer les infos backer depuis le Sheet
-  fetch(`/api/get-suivi?editeur=${encodeURIComponent(editeur)}&ref=${encodeURIComponent(ref)}`)
+  fetch(`/api/index?action=get-suivi&editeur=${encodeURIComponent(editeur)}&ref=${encodeURIComponent(ref)}`)
     .then(r => r.json())
     .then(data => {
       if (!data.trouve) return;
@@ -1031,7 +1031,7 @@ async function downloadCSV() {
   if (csvBtn) { csvBtn.innerHTML = '⏳ Dropbox…'; csvBtn.disabled = true; }
 
   try {
-    const r = await fetch('/api/export-dropbox', {
+    const r = await fetch('/api/index?action=export-dropbox', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ editeur: editeurLabel, csv, filename }),
@@ -1066,7 +1066,7 @@ async function exporterDropbox() {
   statusEl.textContent = '⏳ Dépôt en cours sur Dropbox…';
 
   try {
-    const r = await fetch('/api/export-dropbox', {
+    const r = await fetch('/api/index?action=export-dropbox', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ editeur: adminEditeur || 'Neoludis', rows: data }),
@@ -1078,7 +1078,7 @@ async function exporterDropbox() {
       statusEl.innerHTML = `✅ ${result.nb} commande(s) déposée(s) sur Dropbox — <strong>${result.filename}</strong>${result.lien ? ' — <a href="' + result.lien + '" target="_blank" style="color:#A8E6C5">Télécharger</a>' : ''}`;
       // Marquer les commandes comme "En cours de traitement"
       if (result.refs?.length) {
-        fetch('/api/update-status', {
+        fetch('/api/index?action=update-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ editeur: adminEditeur || 'Neoludis', refs: result.refs, statut: 'En cours' }),
@@ -1189,7 +1189,7 @@ function genererLiens() {
   btn.innerHTML = '<span class="spinner"></span> Import en cours…';
   btn.disabled = true;
 
-  fetch('/api/import-backers', {
+  fetch('/api/index?action=import-backers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ editeur, backers: window._liensGeneres }),
@@ -1248,7 +1248,7 @@ async function envoyerSelection(type) {
   status.textContent = t('sending_emails');
 
   try {
-    const r    = await fetch('/api/send-emails', {
+    const r    = await fetch('/api/index?action=send-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ editeur, backers, subject, body }),
@@ -1259,7 +1259,7 @@ async function envoyerSelection(type) {
     if (data.envoyes > 0) {
       const refs = (data.resultats || []).filter(r => r.statut === 'envoyé').map(r => r.ref);
       if (refs.length) {
-        fetch('/api/update-backer', {
+        fetch('/api/index?action=update-backer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ editeur, refs }),
@@ -1276,7 +1276,7 @@ async function envoyerTous(mode) {
   const status  = document.getElementById('suivi-send-status');
 
   // Récupérer la liste des backers depuis le suivi
-  const r    = await fetch(`/api/get-suivi?editeur=${encodeURIComponent(editeur)}`);
+  const r    = await fetch(`/api/index?action=get-suivi&editeur=${encodeURIComponent(editeur)}`);
   const data = await r.json();
   if (!data.success || !data.backers.length) { alert('Aucun backer trouvé.'); return; }
 
@@ -1311,7 +1311,7 @@ async function envoyerTous(mode) {
   status.textContent = t('sending_emails');
 
   try {
-    const res  = await fetch('/api/send-emails', {
+    const res  = await fetch('/api/index?action=send-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ editeur, backers: backersAvecLien, subject, body }),
@@ -1324,7 +1324,7 @@ async function envoyerTous(mode) {
     if (result.envoyes > 0) {
       const refs = (result.resultats || []).filter(r => r.statut === 'envoyé').map(r => r.ref);
       if (refs.length) {
-        fetch('/api/update-backer', {
+        fetch('/api/index?action=update-backer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ editeur, refs }),
@@ -1345,7 +1345,7 @@ async function importerColiship() {
   status.style.display = 'none';
 
   try {
-    const r    = await fetch('/api/import-coliship', { method: 'POST' });
+    const r    = await fetch('/api/index?action=import-coliship', { method: 'POST' });
     const data = await r.json();
 
     if (!data.success) {
@@ -1480,7 +1480,7 @@ async function importerCommandes() {
       r.readAsDataURL(_commandesFile);
     });
 
-    const resp = await fetch('/api/import-backers?mode=commandes', {
+    const resp = await fetch('/api/index?action=import-commandes', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ editeur, csvBase64: base64, filename: _commandesFile.name }),
@@ -1530,7 +1530,7 @@ async function annulerCommande(ref) {
   if (!confirm(`Annuler la commande ${ref} ?`)) return;
   const editeur = new URLSearchParams(window.location.search).get('editeur') || '';
   try {
-    const r = await fetch('/api/update-status?mode=commande', {
+    const r = await fetch('/api/index?action=update-status-commande', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ editeur, ref, statut: 'Annulé' }),
@@ -1618,7 +1618,7 @@ async function importerSav() {
   btn.disabled=true; btn.textContent='\u23F3 Import en cours\u2026';
   try {
     const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(_savFile);});
-    const resp=await fetch('/api/import-sav',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({editeur,csvBase64:base64,filename:_savFile.name})});
+    const resp=await fetch('/api/index?action=import-sav',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({editeur,csvBase64:base64,filename:_savFile.name})});
     const data=await resp.json();
     if(data.success){
       result.style.cssText='display:block;margin-top:16px;padding:12px 16px;border-radius:8px;background:#EDFAF3;border:1px solid #A8E6C5;color:#1A7A4A;font-size:0.88rem';
@@ -1644,7 +1644,7 @@ async function chargerSuiviSav() {
   const el=document.getElementById('suivi-sav-content');
   el.innerHTML='<p style="color:var(--ink-muted);text-align:center;padding:40px 0">\u23F3 Chargement\u2026</p>';
   try {
-    const resp=await fetch('/api/get-suivi-sav?editeur='+encodeURIComponent(editeur));
+    const resp=await fetch('/api/index?action=get-suivi-sav&editeur='+encodeURIComponent(editeur));
     const data=await resp.json();
     if(!data.success) throw new Error(data.error);
     const dossiers=data.dossiers||[];
@@ -1687,7 +1687,7 @@ async function chargerSuiviCommandes() {
   el.innerHTML = '<p style="color:var(--ink-muted);text-align:center;padding:40px 0">⏳ Chargement…</p>';
 
   try {
-    const r    = await fetch(`/api/get-suivi?editeur=${encodeURIComponent(editeur)}&mode=commandes`);
+    const r    = await fetch(`/api/index?action=get-suivi&editeur=${encodeURIComponent(editeur)}&mode=commandes`);
     const data = await r.json();
     if (!data.success) throw new Error(data.error);
 
@@ -1699,7 +1699,7 @@ async function chargerSuiviCommandes() {
     // Réconciliation silencieuse : commandes sans numéro de colis
     const sansColis = cmds.filter(c => !c.numero_colis);
     if (sansColis.length > 0) {
-      fetch('/api/import-coliship?mode=reconcile-commandes', { method: 'POST' })
+      fetch('/api/index?action=import-coliship&mode=reconcile-commandes', { method: 'POST' })
         .then(r => r.json())
         .then(rec => { if (rec.mis_a_jour > 0) chargerSuiviCommandes(); })
         .catch(() => {});
@@ -1781,7 +1781,7 @@ async function reconcilierColis() {
   status.style.display = 'none';
 
   try {
-    const r    = await fetch('/api/import-coliship?mode=reconcile', { method: 'POST' });
+    const r    = await fetch('/api/index?action=import-coliship&mode=reconcile', { method: 'POST' });
     const data = await r.json();
 
     if (!data.success) {
@@ -1809,7 +1809,7 @@ async function chargerSuivi() {
   stats.innerHTML   = '';
 
   try {
-    const r    = await fetch(`/api/get-suivi?editeur=${encodeURIComponent(editeur)}`);
+    const r    = await fetch(`/api/index?action=get-suivi&editeur=${encodeURIComponent(editeur)}`);
     const data = await r.json();
     if (!data.success || !data.backers.length) {
       content.innerHTML = '<div class="empty-state">Aucun backer importé pour cet éditeur.</div>';
@@ -1848,7 +1848,7 @@ async function chargerSuivi() {
     const sansColis = data.backers.filter(b => !b.numero_colis && b.statut !== 'Expédié');
     if (sansColis.length > 0) {
       // Appel silencieux à la réconciliation
-      fetch('/api/import-coliship?mode=reconcile', { method: 'POST' })
+      fetch('/api/index?action=import-coliship&mode=reconcile', { method: 'POST' })
         .then(r => r.json())
         .then(rec => { if (rec.mis_a_jour > 0) chargerSuivi(); }) // recharger si des colis ont été trouvés
         .catch(() => {});
@@ -1894,7 +1894,7 @@ async function relancerBacker(ref) {
   const { subject, body } = getMailTemplate('relance');
 
   try {
-    const r = await fetch('/api/send-emails', {
+    const r = await fetch('/api/index?action=send-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ editeur, backers: [backer], subject, body }),
@@ -2002,7 +2002,7 @@ async function envoyerEmails() {
   status.textContent = t('sending_emails');
 
   try {
-    const r = await fetch('/api/send-emails', {
+    const r = await fetch('/api/index?action=send-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ editeur, backers: window._liensGeneres, subject, body }),
@@ -2019,7 +2019,7 @@ async function envoyerEmails() {
         .filter(r => r.statut === 'envoyé')
         .map(r => r.ref);
       if (refsEnvoyees.length) {
-        fetch('/api/update-backer', {
+        fetch('/api/index?action=update-backer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ editeur, refs: refsEnvoyees }),
