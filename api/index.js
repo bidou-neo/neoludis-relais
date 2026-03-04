@@ -74,8 +74,17 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     // check-order en mode password
     if (action === 'verify-password') {
-      req.query.mode = 'password';
-      return checkOrderHandler(req, res);
+      // Vérification mot de passe inline (évite dépendance sur req.query mutable)
+      const { editeur, password } = req.body || {};
+      if (!password) return res.status(400).json({ ok: false, error: 'Paramètres manquants' });
+      try {
+        const passwords = JSON.parse(process.env.ADMIN_PASSWORDS || '{}');
+        const expected  = passwords[editeur || ''];
+        if (!expected) return res.status(200).json({ ok: false, error: 'Éditeur inconnu' });
+        return res.status(200).json({ ok: password === expected });
+      } catch(e) {
+        return res.status(500).json({ ok: false, error: 'Config mots de passe invalide' });
+      }
     }
     // import-backers
     if (action === 'import-backers') {
