@@ -78,11 +78,15 @@ export default async function handler(req, res) {
       const { editeur, password } = req.body || {};
       if (!password) return res.status(400).json({ ok: false, error: 'Paramètres manquants' });
       try {
-        const passwords = JSON.parse(process.env.ADMIN_PASSWORDS || '{}');
-        const expected  = passwords[editeur || ''];
+        const raw       = process.env.ADMIN_PASSWORDS || '{}';
+        const passwords = JSON.parse(raw);
+        const key       = editeur || '';
+        const expected  = passwords[key];
+        console.log('[verify-password] editeur:', JSON.stringify(key), '| expected:', JSON.stringify(expected), '| password:', JSON.stringify(password), '| raw:', raw.substring(0, 80));
         if (!expected) return res.status(200).json({ ok: false, error: 'Éditeur inconnu' });
         return res.status(200).json({ ok: password === expected });
       } catch(e) {
+        console.error('[verify-password] erreur:', e.message);
         return res.status(500).json({ ok: false, error: 'Config mots de passe invalide' });
       }
     }
