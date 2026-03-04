@@ -288,6 +288,119 @@ async function uploadDropbox(filename, csvBuffer) {
   if (!res.ok) throw new Error(`Dropbox upload HTTP ${res.status}`);
 }
 
+
+// ── Parser CSV SAV ────────────────────────────────────────────
+function parseSavCSV(text) {
+  const lines   = text.split(/\r?\n/).filter(l => l.trim());
+  const refs    = lines[0].split(';');
+  const labels  = lines[1].split(';');
+  const pieces  = lines[2].split(';');
+
+  const articles = [];
+  for (let i = 17; i < refs.length; i++) {
+    if (refs[i]?.trim()) {
+      articles.push({ ref: refs[i].trim(), label: labels[i]?.trim() || '', piece: pieces[i]?.trim() || '' });
+    }
+  }
+
+  const dossiers = [];
+  for (let i = 8; i < lines.length; i++) {
+    const c = lines[i].split(';');
+    if (!c[0]?.trim()) continue;
+    const arts = {};
+    for (let j = 0; j < articles.length; j++) {
+      const q = parseInt(c[17 + j] || '0', 10);
+      if (q > 0) arts[j] = q;
+    }
+    dossiers.push({
+      ref: c[0].trim(), email: c[1]?.trim() || '', nom: c[3]?.trim() || '', prenom: c[4]?.trim() || '',
+      adresse1: c[5]?.trim() || '', adresse2: c[6]?.trim() || '', cp: c[8]?.trim() || '',
+      ville: c[9]?.trim() || '', pays: c[10]?.trim() || '', tel: c[14]?.trim() || '', pieces: arts,
+    });
+  }
+  return { articles, dossiers };
+}
+
+// ── Mail récap SAV ────────────────────────────────────────────
+async function envoyerMailRecapSav(editeur, filename, articles, dossiers) {
+  // Totaux par article
+  const totaux = articles.map(a => ({ ...a, total: 0 }));
+  dossiers.forEach(d => Object.entries(d.pieces).forEach(([idx, q]) => { totaux[idx].total += q; }));
+
+  const lignes = totaux.filter(a => a.total > 0).map(a => `
+    <tr>
+      <td style="padding:8px 12px;font-family:monospace;font-size:0.9rem">${a.ref}</td>
+      <td style="padding:8px 12px;font-size:0.85rem">${a.label}</td>
+      <td style="padding:8px 12px;font-size:0.82rem;color:#888">${a.piece}</td>
+      <td style="padding:8px 12px;text-align:center;font-weight:700;color:#1A7A4A">${a.total}</td>
+    </tr>`).join('');
+
+  const detail = dossiers.map(d => {
+    const items = Object.entries(d.pieces)
+      .map(([idx, q]) => `${articles[idx]?.piece || '?'} x${q}`)
+      .join(', ');
+    return `<tr style="border-bottom:1px solid #eee">
+      <td style="padding:6px 10px;font-family:monospace">${d.ref}</td>
+      <td style="padding:6px 10px">${d.prenom} ${d.nom}</td>
+      <td style="padding:6px 10px;font-size:0.82rem">${d.adresse1}${d.adresse2 ? ', ' + d.adresse2 : ''}, ${d.cp} ${d.ville}</td>
+      <td style="padding:6px 10px;font-size:0.82rem">${items}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+    <div style="font-family:sans-serif;max-width:750px;margin:0 auto">
+      <h2 style="color:#1a1a1a">🔧 Récap SAV — ${editeur}</h2>
+      <p style="color:#555">Fichier : <strong>${filename}</strong> — ${dossiers.length} dossier(s)</p>
+      <h3>Pièces à préparer :</h3>
+      <table style="width:100%;border-collapse:collapse;background:#f9f9f9">
+        <thead><tr style="background:#1a1a1a;color:white">
+          <th style="padding:10px 12px;text-align:left">Réf jeu</th>
+          <th style="padding:10px 12px;text-align:left">Article</th>
+          <th style="padding:10px 12px;text-align:left">Pièce demandée</th>
+          <th style="padding:10px 12px;text-align:center">Qté</th>
+        </tr></thead>
+        <tbody>${lignes}</tbody>
+      </table>
+      <h3 style="margin-top:24px">Détail des dossiers :</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+        <thead><tr style="background:#f0f0f0">
+          <th style="padding:6px 10px;text-align:left">Réf</th>
+          <th style="padding:6px 10px;text-align:left">Destinataire</th>
+          <th style="padding:6px 10px;text-align:left">Adresse</th>
+          <th style="padding:6px 10px;text-align:left">Pièces</th>
+        </tr></thead>
+        <tbody>${detail}</tbody>
+      </table>
+      <p style="color:#999;font-size:0.8rem;margin-top:24px">Neoludis Relais — SAV automatique</p>
+    </div>`;
+
+  await fetch('https://api.resend.com/emails', {
+    method:  'POST',
+    headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      from:    'Neoludis Relais <noreply@neoludis.fr>',
+      to:      [STOCK_EMAIL],
+      subject: `[SAV] ${editeur} — ${dossiers.length} dossier(s) — ${filename}`,
+      html,
+    }),
+  });
+}
+
+// ── Upload CSV SAV vers Dropbox ────────────────────────────────
+async function uploadDropboxSav(filename, buffer) {
+  const dropboxToken = await getDropboxToken();
+  const path = `/Neoludis/Preparation de commandes/BtoC/SAV/${filename}`;
+  await fetch('https://content.dropboxapi.com/2/files/upload', {
+    method:  'POST',
+    headers: {
+      'Authorization':   `Bearer ${dropboxToken}`,
+      'Dropbox-API-Arg': JSON.stringify({ path, mode: 'add', autorename: true }),
+      'Content-Type':    'application/octet-stream',
+    },
+    body: buffer,
+  });
+}
+
 // ── Handler principal ────────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -375,5 +488,47 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: 'Mode invalide (backers ou commandes)' });
+  if (mode === 'sav') {
+    try {
+      const csvBuffer = Buffer.from(req.body.csvBase64 || '', 'base64');
+      const csvText   = csvBuffer.toString('latin1');
+      const filename  = req.body.filename || 'sav.csv';
+
+      const { articles, dossiers } = parseSavCSV(csvText);
+      if (!dossiers.length) return res.status(400).json({ error: 'Aucun dossier SAV trouvé' });
+
+      const gToken = await getAccessToken('https://www.googleapis.com/auth/spreadsheets');
+
+      // Écrire dans l'onglet SAV
+      const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+      const rows = dossiers.map(d => {
+        const piecesList = Object.entries(d.pieces)
+          .map(([idx, q]) => `${articles[idx]?.ref || '?'} — ${articles[idx]?.piece || '?'} x${q}`)
+          .join(' | ');
+        const articlesList = Object.entries(d.pieces)
+          .map(([idx]) => articles[idx]?.label || '?')
+          .join(' | ');
+        return [
+          now, editeur, filename, d.ref, d.prenom, d.nom, d.email,
+          d.tel, d.adresse1, d.adresse2, d.cp, d.ville, d.pays,
+          articlesList, piecesList, 'En attente', '',
+        ];
+      });
+      await sheetsAppend(gToken, 'SAV!A1', rows);
+
+      // Mail récap SAV
+      await envoyerMailRecapSav(editeur, filename, articles, dossiers);
+
+      // Archiver CSV dans Dropbox
+      await uploadDropboxSav(filename, csvBuffer);
+
+      return res.status(200).json({ success: true, dossiers: dossiers.length });
+
+    } catch (err) {
+      console.error('import-sav error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  return res.status(400).json({ error: 'Mode invalide (backers, commandes ou sav)' });
 }
