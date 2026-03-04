@@ -82,7 +82,6 @@ export default async function handler(req, res) {
         const passwords = JSON.parse(raw);
         const key       = editeur || '';
         const expected  = passwords[key];
-        console.log('[verify-password] editeur:', JSON.stringify(key), '| expected:', JSON.stringify(expected), '| password:', JSON.stringify(password), '| raw:', raw.substring(0, 80));
         if (!expected) return res.status(200).json({ ok: false, error: 'Éditeur inconnu' });
         return res.status(200).json({ ok: password === expected });
       } catch(e) {
