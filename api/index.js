@@ -22,17 +22,17 @@
 //   POST export-dropbox       (délégué)
 //   POST auth-colissimo       (délégué)
 
-import checkOrderHandler      from './check-order.js';
-import getSuiviHandler        from './get-suivi.js';
-import updateStatusHandler    from './update-status.js';
-import reconcileColisHandler  from './reconcile-colis.js';
-import importColishipHandler  from './import-coliship.js';
-import importBackersHandler   from './import-backers.js';
+import checkOrderHandler      from '../lib/check-order.js';
+import getSuiviHandler        from '../lib/get-suivi.js';
+import updateStatusHandler    from '../lib/update-status.js';
+import reconcileColisHandler  from '../lib/reconcile-colis.js';
+import importColishipHandler  from '../lib/import-coliship.js';
+import importBackersHandler   from '../lib/import-backers.js';
 
 // get-stock utilise encore CommonJS (require)
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const getStockHandler = require('./get-stock.js');
+const getStockHandler = require('../lib/get-stock.js');
 
 // ── Helpers ──────────────────────────────────────────────────
 function cors(res) {
