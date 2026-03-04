@@ -29,10 +29,7 @@ import reconcileColisHandler  from '../lib/reconcile-colis.js';
 import importColishipHandler  from '../lib/import-coliship.js';
 import importBackersHandler   from '../lib/import-backers.js';
 
-// get-stock utilise encore CommonJS (require)
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const getStockHandler = require('../lib/get-stock.js');
+import getStockHandler from '../lib/get-stock.js';
 
 // ── Helpers ──────────────────────────────────────────────────
 function cors(res) {
