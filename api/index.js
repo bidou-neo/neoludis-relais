@@ -65,7 +65,40 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     if (action === 'check-order')   return checkOrderHandler(req, res);
     if (action === 'get-suivi')     return getSuiviHandler(req, res);
-    if (action === 'get-suivi-sav') return getSuiviSav(req, res);
+    if (action === 'get-suivi-sav') {
+      // Lire l'onglet SAV depuis Google Sheets
+      try {
+        const { getAccessToken } = await import('../api/_google-auth.js');
+        const token    = await getAccessToken('https://www.googleapis.com/auth/spreadsheets.readonly');
+        const editeur  = req.query?.editeur || '';
+        const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+        const r        = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('SAV!A:Q')}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const data = await r.json();
+        if (data.error) throw new Error(data.error.message);
+        const dossiers = (data.values || []).slice(1)
+          .filter(row => (row[1]||'').toLowerCase() === editeur.toLowerCase())
+          .map(row => ({
+            date_import:   row[0]  || '',
+            editeur:       row[1]  || '',
+            fichier:       row[2]  || '',
+            ref:           row[3]  || '',
+            prenom:        row[4]  || '',
+            nom:           row[5]  || '',
+            email:         row[6]  || '',
+            tel:           row[7]  || '',
+            article:       row[13] || '',
+            piece:         row[14] || '',
+            statut:        row[15] || 'En attente',
+            numero_suivi:  row[16] || '',
+          }));
+        return res.status(200).json({ success: true, dossiers });
+      } catch(err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+    }
     if (action === 'get-stock')     return getStockHandler(req, res);
     return res.status(404).json({ error: 'Action GET inconnue : ' + action });
   }
