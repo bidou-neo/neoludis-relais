@@ -29,7 +29,13 @@ import reconcileColisHandler  from '../lib/reconcile-colis.js';
 import importColishipHandler  from '../lib/import-coliship.js';
 import importBackersHandler   from '../lib/import-backers.js';
 
-import getStockHandler from '../lib/get-stock.js';
+import getStockHandler          from '../lib/get-stock.js';
+import { getAccessToken }       from './_google-auth.js';
+import saveResponseHandler      from './save-response.js';
+import sendEmailsHandler        from './send-emails.js';
+import updateBackerHandler      from './update-backer.js';
+import exportDropboxHandler     from './export-dropbox.js';
+import authColissimoHandler     from './auth-colissimo.js';
 
 // ── Helpers ──────────────────────────────────────────────────
 function cors(res) {
@@ -68,7 +74,6 @@ export default async function handler(req, res) {
     if (action === 'get-suivi-sav') {
       // Lire l'onglet SAV depuis Google Sheets
       try {
-        const { getAccessToken } = await import('../api/_google-auth.js');
         const token    = await getAccessToken('https://www.googleapis.com/auth/spreadsheets.readonly');
         const editeur  = req.query?.editeur || '';
         const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -152,11 +157,11 @@ export default async function handler(req, res) {
     if (action === 'import-coliship')  return importColishipHandler(req, res);
     if (action === 'reconcile-colis')  return reconcileColisHandler(req, res);
     // délégués (restent leurs propres fichiers Vercel, pas exposés publiquement)
-    if (action === 'save-response')    return delegate('save-response',  req, res);
-    if (action === 'send-emails')      return delegate('send-emails',    req, res);
-    if (action === 'update-backer')    return delegate('update-backer',  req, res);
-    if (action === 'export-dropbox')   return delegate('export-dropbox', req, res);
-    if (action === 'auth-colissimo')   return delegate('auth-colissimo', req, res);
+    if (action === 'save-response')    return saveResponseHandler(req, res);
+    if (action === 'send-emails')      return sendEmailsHandler(req, res);
+    if (action === 'update-backer')    return updateBackerHandler(req, res);
+    if (action === 'export-dropbox')   return exportDropboxHandler(req, res);
+    if (action === 'auth-colissimo')   return authColissimoHandler(req, res);
 
     return res.status(404).json({ error: 'Action POST inconnue : ' + action });
   }
